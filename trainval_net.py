@@ -66,7 +66,7 @@ def parse_args():
 
     parser.add_argument('--num_rois', default=128, help='number of rois per iteration')
 
-    parser.add_argument('--hard_ratio', type=float, help='ratio of hard example')
+    parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.3)
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -168,6 +168,7 @@ if __name__ == '__main__':
     else:
         raise 'invalid loss funtion'
 
+    hard_ratio = args.hard_ratio
     sorted_previous_rois = {}
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
