@@ -49,7 +49,7 @@ def parse_args():
                         default=10, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
-                        help='directory to save models', default="/home/seungkwan/repo/ubr",
+                        help='directory to save models', default="../repo/ubr",
                         nargs=argparse.REMAINDER)
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
@@ -68,7 +68,7 @@ def parse_args():
 
     parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.3)
 
-    parser.add_argument('--hem_start_epoch', default=6)
+    parser.add_argument('--hem_start_epoch', default=6, type=int)
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = COCODataset('/home/seungkwan/data/coco/annotations/instances_train2014_subtract_voc.json', '/home/seungkwan/data/coco/images/train2014/', training=True)
+    dataset = COCODataset('./data/coco/annotations/instances_train2014_subtract_voc.json', './data/coco/images/train2014/', training=True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
 
     # initilize the network here.
