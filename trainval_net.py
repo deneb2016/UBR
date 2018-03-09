@@ -68,6 +68,8 @@ def parse_args():
 
     parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.3)
 
+    parser.add_argument('hem_start_epoch', default=6)
+
     # config optimization
     parser.add_argument('--o', dest='optimizer',
                         help='training optimizer',
@@ -180,8 +182,8 @@ if __name__ == '__main__':
             adjust_learning_rate(optimizer, args.lr_decay_gamma)
             lr *= args.lr_decay_gamma
 
-        # After 5 epoch, start hard example mining
-        if epoch <= 5:
+        # From args.hem_start_epoch, start hard example mining
+        if epoch < args.hem_start_epoch:
             num_gen_box = args.num_rois
             num_hard_box = 0
         else:
