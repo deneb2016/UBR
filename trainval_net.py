@@ -70,6 +70,8 @@ def parse_args():
 
     parser.add_argument('--hem_start_epoch', default=6, type=int)
 
+    parser.add_argument('--gaussian', dest='gaussian', action='store_true', help='whether use gaussian in box generation')
+
     # config optimization
     parser.add_argument('--o', dest='optimizer',
                         help='training optimizer',
@@ -172,6 +174,7 @@ if __name__ == '__main__':
 
     hard_ratio = args.hard_ratio
     sorted_previous_rois = {}
+    use_gaussian = args.gaussian
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         UBR.train()
@@ -207,7 +210,8 @@ if __name__ == '__main__':
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-            rois = generate_adjacent_boxes(gt_boxes, num_gen_box // num_box, data_width, data_height, args.gen_box_var).view(-1, 5)
+
+            rois = generate_adjacent_boxes(gt_boxes, num_gen_box // num_box, data_width, data_height, args.gen_box_var, use_gaussian).view(-1, 5)
 
             # append hard example of this image in previous epoch
             if num_hard_box > 0:
@@ -216,15 +220,16 @@ if __name__ == '__main__':
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
             bbox_pred = UBR(im_data, rois)
-            loss, _, _, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+            loss, num_refined_rois, _, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
 
             # save refined rois for hard example mining
             _, sorted_indices = loss.sort(0, descending=True)
-            sorted_previous_rois[im_id] = refined_rois[sorted_indices].data
-            sorted_previous_rois[im_id][1].clamp_(min=0, max=data_width - 1)
-            sorted_previous_rois[im_id][2].clamp_(min=0, max=data_height - 1)
-            sorted_previous_rois[im_id][3].clamp_(min=0, max=data_width - 1)
-            sorted_previous_rois[im_id][4].clamp_(min=0, max=data_height - 1)
+            sorted_previous_rois[im_id] = torch.zeros((num_refined_rois, 5))
+            sorted_previous_rois[im_id][:, 1:5] = refined_rois[sorted_indices].data
+            sorted_previous_rois[im_id][:, 1].clamp_(min=0, max=data_width - 1)
+            sorted_previous_rois[im_id][:, 2].clamp_(min=0, max=data_height - 1)
+            sorted_previous_rois[im_id][:, 3].clamp_(min=0, max=data_width - 1)
+            sorted_previous_rois[im_id][:, 4].clamp_(min=0, max=data_height - 1)
 
             loss = loss.mean()
             loss_temp += loss.data[0]
