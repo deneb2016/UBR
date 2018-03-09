@@ -2,88 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e417c927-46f1-4ad8-9e16-1533a5d64dc1" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/LICENSE" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/README.md" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_init_paths.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/cfgs/res101.yml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/cfgs/res101_ls.yml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/cfgs/res50.yml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/cfgs/vgg16.yml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img1.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img1_det.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img1_det_res101.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img2.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img2_det.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img2_det_res101.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img3.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img3_det.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img3_det_res101.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img4.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img4_det.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/images/img4_det_res101.jpg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/VOCdevkit-matlab-wrapper/get_voc_opts.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/VOCdevkit-matlab-wrapper/voc_eval.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/VOCdevkit-matlab-wrapper/xVOCap.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/coco.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/ds_utils.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/factory.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/imagenet.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/imdb.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/pascal_voc.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/pascal_voc_rbg.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/tools/mcg_munge.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/vg.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/vg_eval.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/datasets/voc_eval.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/faster_rcnn/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/faster_rcnn/faster_rcnn.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/faster_rcnn/resnet.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/faster_rcnn/vgg16.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/.gitignore" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/_ext/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/_ext/nms/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/build.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/make.sh" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/nms_gpu.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/nms_kernel.cu" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/nms_wrapper.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/src/nms_cuda.c" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/src/nms_cuda.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/src/nms_cuda_kernel.cu" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/nms/src/nms_cuda_kernel.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/rpn/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/rpn/anchor_target_layer.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/rpn/bbox_transform.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/rpn/generate_anchors.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/rpn/proposal_layer.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/rpn/proposal_target_layer_cascade.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/rpn/rpn.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/utils/bbox.c" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/utils/bbox.pyx" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/utils/blob.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/utils/config.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/model/utils/logger.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/UPSTREAM_REV" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/_mask.c" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/_mask.pyx" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/coco.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/cocoeval.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/license.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/mask.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/maskApi.c" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/pycocotools/maskApi.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/roi_data_layer/__init__.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/roi_data_layer/minibatch.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/roi_data_layer/roibatchLoader.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/lib/roi_data_layer/roidb.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test_net.py" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/demo.py" afterPath="$PROJECT_DIR$/demo.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/make.sh" afterPath="$PROJECT_DIR$/lib/make.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lib/model/utils/net_utils.py" afterPath="$PROJECT_DIR$/lib/model/utils/net_utils.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/trainval_net.py" afterPath="$PROJECT_DIR$/trainval_net.py" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change beforePath="$PROJECT_DIR$/hello.py" afterPath="$PROJECT_DIR$/hello.py" />
+      <change beforePath="$PROJECT_DIR$/lib/model/ubr/cascading_ubr.py" afterPath="$PROJECT_DIR$/lib/model/ubr/cascading_ubr.py" />
+      <change beforePath="$PROJECT_DIR$/lib/model/ubr/ubr_loss.py" afterPath="$PROJECT_DIR$/lib/model/ubr/ubr_loss.py" />
+      <change beforePath="$PROJECT_DIR$/trainval_net.py" afterPath="$PROJECT_DIR$/trainval_net.py" />
+      <change beforePath="$PROJECT_DIR$/ubr_wrapper.py" afterPath="$PROJECT_DIR$/ubr_wrapper.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -94,11 +18,23 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="trainval_net.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/trainval_net.py">
+      <file leaf-file-name="cascading_ubr.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/model/ubr/cascading_ubr.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="522">
-              <caret line="221" column="69" lean-forward="true" selection-start-line="221" selection-start-column="69" selection-end-line="221" selection-end-column="69" />
+            <state relative-caret-position="558">
+              <caret line="31" column="71" lean-forward="false" selection-start-line="31" selection-start-column="71" selection-end-line="31" selection-end-column="71" />
+              <folding>
+                <element signature="e#0#35#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="train_cubr.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/train_cubr.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="342">
+              <caret line="121" column="30" lean-forward="false" selection-start-line="121" selection-start-column="30" selection-end-line="121" selection-end-column="30" />
               <folding>
                 <element signature="e#1#39#0" expanded="true" />
               </folding>
@@ -106,32 +42,24 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/datasets/__init__.py">
+      <file leaf-file-name="vgg.py" pinned="false" current-in-tab="false">
+        <entry file="jar://$USER_HOME$/anaconda3/envs/torchenv/lib/python3.6/site-packages/torchvision-0.1.9-py3.6.egg!/torchvision/models/vgg.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="1404">
+              <caret line="80" column="35" lean-forward="false" selection-start-line="80" selection-start-column="35" selection-end-line="80" selection-end-column="35" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="demo.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/demo.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="144">
-              <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="requirements.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/requirements.txt">
+      <file leaf-file-name="box_utils.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/model/utils/box_utils.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="0">
               <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
+              <folding>
+                <element signature="e#0#12#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -139,8 +67,42 @@
       <file leaf-file-name="hello.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hello.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="5" column="1" lean-forward="true" selection-start-line="5" selection-start-column="1" selection-end-line="5" selection-end-column="1" />
+            <state relative-caret-position="4500">
+              <caret line="254" column="12" lean-forward="false" selection-start-line="254" selection-start-column="12" selection-end-line="254" selection-end-column="12" />
+              <folding>
+                <element signature="e#8510#8522#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ubr_vgg.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/model/ubr/ubr_vgg.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="252">
+              <caret line="17" column="57" lean-forward="false" selection-start-line="17" selection-start-column="57" selection-end-line="17" selection-end-column="57" />
+              <folding>
+                <element signature="e#0#35#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ubr_loss.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/model/ubr/ubr_loss.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="577">
+              <caret line="144" column="41" lean-forward="false" selection-start-line="144" selection-start-column="41" selection-end-line="144" selection-end-column="41" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="trainval_net.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trainval_net.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="205" column="38" lean-forward="false" selection-start-line="205" selection-start-column="38" selection-end-line="205" selection-end-column="38" />
               <folding />
             </state>
           </provider>
@@ -149,8 +111,8 @@
       <file leaf-file-name="ubr_wrapper.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ubr_wrapper.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="540">
-              <caret line="30" column="26" lean-forward="false" selection-start-line="30" selection-start-column="26" selection-end-line="30" selection-end-column="26" />
+            <state relative-caret-position="576">
+              <caret line="44" column="23" lean-forward="false" selection-start-line="44" selection-start-column="23" selection-end-line="44" selection-end-column="23" />
               <folding>
                 <element signature="e#0#38#0" expanded="true" />
               </folding>
@@ -158,42 +120,14 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/.gitignore">
+      <file leaf-file-name="demo.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/demo.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ubr_dataset.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/datasets/ubr_dataset.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="108">
-              <caret line="6" column="21" lean-forward="false" selection-start-line="6" selection-start-column="21" selection-end-line="6" selection-end-column="21" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/model/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="net_utils.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/lib/model/utils/net_utils.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="126">
-              <caret line="7" column="10" lean-forward="true" selection-start-line="7" selection-start-column="10" selection-end-line="7" selection-end-column="10" />
-              <folding />
+            <state relative-caret-position="2448">
+              <caret line="159" column="14" lean-forward="false" selection-start-line="159" selection-start-column="14" selection-end-line="159" selection-end-column="14" />
+              <folding>
+                <element signature="e#281#319#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -209,9 +143,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>TRAIN.SCA</find>
-      <find>TRAIN.MAX</find>
-      <find>gt_boxes</find>
       <find>roidb</find>
       <find>output_dir</find>
       <find>flip</find>
@@ -236,9 +167,12 @@
       <find>checkpoint_inter</find>
       <find>--ls</find>
       <find>_init_paths</find>
-      <find>plt</find>
       <find>cfg</find>
       <find>config</find>
+      <find>save</find>
+      <find>save_dir</find>
+      <find>plt</find>
+      <find>loss_per_layer</find>
     </findStrings>
     <dirStrings>
       <dir>$PROJECT_DIR$</dir>
@@ -264,18 +198,27 @@
         <option value="$PROJECT_DIR$/lib/roi_data_layer/minibatch.py" />
         <option value="$PROJECT_DIR$/hello2.py" />
         <option value="$PROJECT_DIR$/lib/model/utils/box_utils.py" />
-        <option value="$PROJECT_DIR$/lib/model/ubr/ubr_loss.py" />
         <option value="$PROJECT_DIR$/lib/model/ubr/ubr_vgg.py" />
         <option value="$PROJECT_DIR$/lib/datasets/ubr_dataset.py" />
-        <option value="$PROJECT_DIR$/hello.py" />
         <option value="$PROJECT_DIR$/demo.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
-        <option value="$PROJECT_DIR$/ubr_wrapper.py" />
         <option value="$PROJECT_DIR$/lib/model/utils/net_utils.py" />
         <option value="$PROJECT_DIR$/lib/datasets/__init__.py" />
+        <option value="$PROJECT_DIR$/ubr_wrapper.py" />
+        <option value="$PROJECT_DIR$/lib/make.sh" />
+        <option value="$PROJECT_DIR$/hello.py" />
         <option value="$PROJECT_DIR$/trainval_net.py" />
+        <option value="$PROJECT_DIR$/lib/model/ubr/cascading_ubr.py" />
+        <option value="$PROJECT_DIR$/lib/model/ubr/ubr_loss.py" />
+        <option value="$PROJECT_DIR$/train_cubr.py" />
       </list>
     </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="65" />
@@ -316,12 +259,6 @@
               <item name="ubr" type="b2602c69:ProjectViewProjectNode" />
               <item name="ubr" type="462c0819:PsiDirectoryNode" />
               <item name="lib" type="462c0819:PsiDirectoryNode" />
-              <item name="datasets" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="ubr" type="b2602c69:ProjectViewProjectNode" />
-              <item name="ubr" type="462c0819:PsiDirectoryNode" />
-              <item name="lib" type="462c0819:PsiDirectoryNode" />
               <item name="model" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -329,7 +266,7 @@
               <item name="ubr" type="462c0819:PsiDirectoryNode" />
               <item name="lib" type="462c0819:PsiDirectoryNode" />
               <item name="model" type="462c0819:PsiDirectoryNode" />
-              <item name="utils" type="462c0819:PsiDirectoryNode" />
+              <item name="ubr" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -339,7 +276,8 @@
   </component>
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="configurable.group.build" />
-    <property name="last_opened_file_path" value="$USER_HOME$/py-MDNet" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -358,7 +296,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.hello2">
+  <component name="RunManager" selected="Python.hello">
     <configuration name="hello" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -371,10 +309,12 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="real-faster-rcnn" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/hello.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
     </configuration>
     <configuration name="hello2" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -388,10 +328,12 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="real-faster-rcnn" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/hello2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
     </configuration>
     <configuration name="ubr_wrapper" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -405,10 +347,12 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="real-faster-rcnn" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/ubr_wrapper.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
     </configuration>
     <list size="3">
       <item index="0" class="java.lang.String" itemvalue="Python.hello" />
@@ -417,14 +361,17 @@
     </list>
     <recent_temporary>
       <list size="3">
-        <item index="0" class="java.lang.String" itemvalue="Python.hello2" />
-        <item index="1" class="java.lang.String" itemvalue="Python.hello" />
-        <item index="2" class="java.lang.String" itemvalue="Python.ubr_wrapper" />
+        <item index="0" class="java.lang.String" itemvalue="Python.hello" />
+        <item index="1" class="java.lang.String" itemvalue="Python.ubr_wrapper" />
+        <item index="2" class="java.lang.String" itemvalue="Python.hello2" />
       </list>
     </recent_temporary>
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
     <option name="remove_strategy" value="false" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -437,87 +384,51 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="-4" width="2495" height="1444" extended-state="6" />
+    <frame x="65" y="-4" width="2497" height="1452" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1466934" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32901752" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.42802742" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.42802742" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1466934" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32901752" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="6" />
+      <option name="time" value="7" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/cfgs/res101.yml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="13" column="5" lean-forward="false" selection-start-line="13" selection-start-column="5" selection-end-line="13" selection-end-column="5" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/ubr/ubr_resnet.py" />
-    <entry file="file://$PROJECT_DIR$/lib/model/faster_rcnn/resnet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4104">
-          <caret line="241" column="30" lean-forward="false" selection-start-line="241" selection-start-column="30" selection-end-line="241" selection-end-column="30" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/rpn/rpn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-89">
-          <caret line="41" column="43" lean-forward="true" selection-start-line="41" selection-start-column="43" selection-end-line="41" selection-end-column="43" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/rpn/anchor_target_layer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="35" column="8" lean-forward="false" selection-start-line="35" selection-start-column="8" selection-end-line="35" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model/rpn/rpn.py" />
+    <entry file="file://$PROJECT_DIR$/lib/model/rpn/anchor_target_layer.py" />
     <entry file="file://$PROJECT_DIR$/lib/model/roi_pooling/functions/roi_pool.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="432">
           <caret line="24" column="36" lean-forward="true" selection-start-line="24" selection-start-column="36" selection-end-line="24" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#12#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/anaconda3/envs/torchenv/lib/python3.6/site-packages/torchvision-0.1.9-py3.6.egg!/torchvision/models/vgg.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2107">
-          <caret line="133" column="4" lean-forward="false" selection-start-line="133" selection-start-column="4" selection-end-line="133" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -525,55 +436,18 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="216">
           <caret line="13" column="24" lean-forward="false" selection-start-line="13" selection-start-column="24" selection-end-line="13" selection-end-column="24" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/rpn/proposal_target_layer_cascade.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="355">
-          <caret line="113" column="0" lean-forward="true" selection-start-line="113" selection-start-column="0" selection-end-line="113" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/utils/bbox.pyx">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/rpn/bbox_transform.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="120" column="50" lean-forward="true" selection-start-line="120" selection-start-column="50" selection-end-line="120" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/faster_rcnn/faster_rcnn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="617">
-          <caret line="133" column="0" lean-forward="true" selection-start-line="133" selection-start-column="0" selection-end-line="137" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/faster_rcnn/vgg16.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="16" column="10" lean-forward="false" selection-start-line="16" selection-start-column="10" selection-end-line="16" selection-end-column="10" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model/rpn/proposal_target_layer_cascade.py" />
+    <entry file="file://$PROJECT_DIR$/lib/model/utils/bbox.pyx" />
+    <entry file="file://$PROJECT_DIR$/lib/model/rpn/bbox_transform.py" />
+    <entry file="file://$PROJECT_DIR$/lib/model/faster_rcnn/faster_rcnn.py" />
+    <entry file="file://$PROJECT_DIR$/lib/model/faster_rcnn/vgg16.py" />
     <entry file="file://$PROJECT_DIR$/lib/model/roi_align/modules/roi_align.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="432">
           <caret line="26" column="23" lean-forward="false" selection-start-line="26" selection-start-column="23" selection-end-line="26" selection-end-column="23" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -581,57 +455,19 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="378">
           <caret line="23" column="32" lean-forward="false" selection-start-line="23" selection-start-column="32" selection-end-line="23" selection-end-column="32" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/images/img1.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/images/img1_det.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/cfgs/res101_ls.yml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/datasets/factory.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="26" column="9" lean-forward="true" selection-start-line="26" selection-start-column="9" selection-end-line="26" selection-end-column="9" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/datasets/coco.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="38" column="57" lean-forward="false" selection-start-line="38" selection-start-column="57" selection-end-line="38" selection-end-column="57" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/datasets/ubr_dataloader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3493">
-          <caret line="214" column="0" lean-forward="false" selection-start-line="214" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/images/img1.jpg" />
+    <entry file="file://$PROJECT_DIR$/images/img1_det.jpg" />
+    <entry file="file://$PROJECT_DIR$/cfgs/res101_ls.yml" />
+    <entry file="file://$PROJECT_DIR$/lib/datasets/factory.py" />
+    <entry file="file://$PROJECT_DIR$/lib/datasets/coco.py" />
+    <entry file="file://$PROJECT_DIR$/lib/datasets/ubr_dataloader.py" />
     <entry file="file://$USER_HOME$/anaconda3/envs/torchenv/lib/python3.6/site-packages/PIL/Image.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="284">
           <caret line="2476" column="0" lean-forward="false" selection-start-line="2476" selection-start-column="0" selection-end-line="2476" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -639,221 +475,60 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="284">
           <caret line="155" column="0" lean-forward="false" selection-start-line="155" selection-start-column="0" selection-end-line="155" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/roi_data_layer/roidb.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="384">
-          <caret line="59" column="22" lean-forward="false" selection-start-line="59" selection-start-column="22" selection-end-line="59" selection-end-column="22" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/utils/blob.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="10" column="41" lean-forward="true" selection-start-line="10" selection-start-column="41" selection-end-line="11" selection-end-column="10" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/roi_data_layer/roidb.py" />
+    <entry file="file://$PROJECT_DIR$/lib/model/utils/blob.py" />
     <entry file="file://$USER_HOME$/.PyCharmCE2017.2/system/python_stubs/492792283/numpy/random/mtrand.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="104">
           <caret line="2388" column="22" lean-forward="true" selection-start-line="2388" selection-start-column="22" selection-end-line="2388" selection-end-column="22" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/roi_data_layer/minibatch.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="473">
-          <caret line="74" column="14" lean-forward="false" selection-start-line="74" selection-start-column="10" selection-end-line="74" selection-end-column="14" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/roi_data_layer/roibatchLoader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="523">
-          <caret line="203" column="9" lean-forward="true" selection-start-line="203" selection-start-column="9" selection-end-line="204" selection-end-column="85" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/make.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="252">
-          <caret line="14" column="0" lean-forward="false" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/utils/config.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="265">
-          <caret line="23" column="7" lean-forward="false" selection-start-line="23" selection-start-column="2" selection-end-line="23" selection-end-column="7" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/utils/box_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-427">
-          <caret line="92" column="4" lean-forward="false" selection-start-line="92" selection-start-column="4" selection-end-line="92" selection-end-column="4" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/ubr/ubr_loss.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="149">
-          <caret line="66" column="33" lean-forward="false" selection-start-line="66" selection-start-column="33" selection-end-line="66" selection-end-column="33" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/datasets/tools/mcg_munge.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/ubr/ubr_vgg.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="5" column="0" lean-forward="false" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#35#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lib/datasets/ubr_dataset.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="108">
-          <caret line="6" column="21" lean-forward="false" selection-start-line="6" selection-start-column="21" selection-end-line="6" selection-end-column="21" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/roi_data_layer/minibatch.py" />
+    <entry file="file://$PROJECT_DIR$/lib/roi_data_layer/roibatchLoader.py" />
+    <entry file="file://$PROJECT_DIR$/lib/model/utils/config.py" />
+    <entry file="file://$PROJECT_DIR$/lib/datasets/tools/mcg_munge.py" />
     <entry file="file://$PROJECT_DIR$/lib/model/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/model/utils/bbox.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="21" column="16" lean-forward="false" selection-start-line="21" selection-start-column="16" selection-end-line="21" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/hello2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="108">
-          <caret line="6" column="24" lean-forward="true" selection-start-line="6" selection-start-column="24" selection-end-line="6" selection-end-column="24" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/eval.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/hello.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="5" column="1" lean-forward="true" selection-start-line="5" selection-start-column="1" selection-end-line="5" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model/utils/bbox.c" />
+    <entry file="file://$PROJECT_DIR$/hello2.py" />
+    <entry file="file://$PROJECT_DIR$/eval.py" />
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/LICENSE">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_net.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2690">
-          <caret line="232" column="54" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="329" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/LICENSE" />
+    <entry file="file://$PROJECT_DIR$/test_net.py" />
     <entry file="file://$PROJECT_DIR$/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/_init_paths.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/demo.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="144">
-          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/_init_paths.py" />
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ubr_wrapper.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="540">
-          <caret line="30" column="26" lean-forward="false" selection-start-line="30" selection-start-column="26" selection-end-line="30" selection-end-column="26" />
-          <folding>
-            <element signature="e#0#38#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/model/utils/net_utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="126">
-          <caret line="7" column="10" lean-forward="true" selection-start-line="7" selection-start-column="10" selection-end-line="7" selection-end-column="10" />
-          <folding />
+          <caret line="7" column="10" lean-forward="false" selection-start-line="7" selection-start-column="10" selection-end-line="7" selection-end-column="10" />
         </state>
       </provider>
     </entry>
@@ -861,14 +536,118 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1857">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/datasets/ubr_dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="108">
+          <caret line="6" column="21" lean-forward="false" selection-start-line="6" selection-start-column="21" selection-end-line="6" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/make.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="3" column="0" lean-forward="false" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ubr_wrapper.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="576">
+          <caret line="44" column="23" lean-forward="false" selection-start-line="44" selection-start-column="23" selection-end-line="44" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model/ubr/ubr_vgg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="17" column="57" lean-forward="false" selection-start-line="17" selection-start-column="57" selection-end-line="17" selection-end-column="57" />
+          <folding>
+            <element signature="e#0#35#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/anaconda3/envs/torchenv/lib/python3.6/site-packages/torchvision-0.1.9-py3.6.egg!/torchvision/models/vgg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1404">
+          <caret line="80" column="35" lean-forward="false" selection-start-line="80" selection-start-column="35" selection-end-line="80" selection-end-column="35" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/demo.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2448">
+          <caret line="159" column="14" lean-forward="false" selection-start-line="159" selection-start-column="14" selection-end-line="159" selection-end-column="14" />
+          <folding>
+            <element signature="e#281#319#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hello.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4500">
+          <caret line="254" column="12" lean-forward="false" selection-start-line="254" selection-start-column="12" selection-end-line="254" selection-end-column="12" />
+          <folding>
+            <element signature="e#8510#8522#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model/utils/box_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/trainval_net.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="522">
-          <caret line="221" column="69" lean-forward="true" selection-start-line="221" selection-start-column="69" selection-end-line="221" selection-end-column="69" />
+        <state relative-caret-position="234">
+          <caret line="205" column="38" lean-forward="false" selection-start-line="205" selection-start-column="38" selection-end-line="205" selection-end-column="38" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model/ubr/ubr_loss.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="577">
+          <caret line="144" column="41" lean-forward="false" selection-start-line="144" selection-start-column="41" selection-end-line="144" selection-end-column="41" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/model/ubr/cascading_ubr.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="558">
+          <caret line="31" column="71" lean-forward="false" selection-start-line="31" selection-start-column="71" selection-end-line="31" selection-end-column="71" />
+          <folding>
+            <element signature="e#0#35#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train_cubr.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="342">
+          <caret line="121" column="30" lean-forward="false" selection-start-line="121" selection-start-column="30" selection-end-line="121" selection-end-column="30" />
           <folding>
             <element signature="e#1#39#0" expanded="true" />
           </folding>

@@ -65,5 +65,8 @@ class UBRWrapper:
 
         return ret
 
-ubr = UBRWrapper('./trained_model/ubr_1_10_14827.pth')
+ubr = UBRWrapper('/home/seungkwan/repo/ubr/vgg16/coco2014_train_subtract_voc/ubr_4_19_14827.pth')
 img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
+ubr.query(img, np.array([[10, 20, 30, 60],
+                         [30, 20, 50, 70]
+                         ], np.float))

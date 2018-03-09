@@ -153,9 +153,9 @@
 #     plt.hlines(prop[1], prop[0], prop[2], colors=color)
 #     plt.hlines(prop[3], prop[0], prop[2], colors=color)
 #
-# base = torch.from_numpy(np.array([[30, 20, 90, 50]], np.float32))
+# base = torch.from_numpy(np.array([[30, 20, 70, 50]], np.float32))
 # num = 1000
-# prop = generate_adjacent_boxes(base, num, 150, 150, 0.2, True)
+# prop = generate_adjacent_boxes(base, num, 150, 150, 0.3, True)
 # for j in range(base.shape[0]):
 #     draw_box(base[j], 'r')
 #     iou = jaccard(base[j:j + 1], prop[j])
@@ -167,6 +167,8 @@
 #     print(iou.gt(0.5).sum())
 #     print(iou.gt(0.4).sum())
 #     print(iou.gt(0.3).sum())
+#     print(iou.gt(0.2).sum())
+#     print(iou.gt(0.1).sum())
 #     print(iou.min())
 #     # for i in range(num):
 #     #     if 0.4 > iou[0, i] > 0.3:
@@ -242,3 +244,12 @@
 # #     print(i, here['full_path'])
 # #     img = imread(here['full_path'])
 # #     print(img.shape)
+
+import torch
+import numpy as np
+
+from lib.model.utils.box_utils import inverse_transform
+from torch.autograd import Variable
+a = Variable(torch.from_numpy(np.array([[10, 10, 30, 30]], np.float)))
+b = Variable(torch.from_numpy(np.array([[0.1, 0.01, -0.5, 0.2]], np.float)))
+print(a, b, inverse_transform(a, b))
