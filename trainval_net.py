@@ -68,7 +68,7 @@ def parse_args():
 
     parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.3)
 
-    parser.add_argument('hem_start_epoch', default=6)
+    parser.add_argument('--hem_start_epoch', default=6)
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
