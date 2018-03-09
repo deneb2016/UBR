@@ -73,7 +73,8 @@ class COCODataset(data.Dataset):
         im -= np.array([[[102.9801, 115.9465, 122.7717]]])
         im_shape = im.shape
         im_size_min = np.min(im_shape[0:2])
-        im_scale = 600 / float(im_size_min)
+        #im_scale = 600 / float(im_size_min)
+        im_scale = (np.random.choice([480, 576, 688, 864, 1000]) if self.training else 600) / float(im_size_min)
         im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)
 
         data = torch.from_numpy(im)

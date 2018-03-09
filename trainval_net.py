@@ -49,11 +49,12 @@ def parse_args():
                         default=10, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
-                        help='directory to save models', default="../repo/ubr",
-                        nargs=argparse.REMAINDER)
+                        help='directory to save models', default="../repo/ubr")
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
                         default=0, type=int)
+    parser.add_argument('--anno', default = './data/coco/annotations/instances_train2014_subtract_voc.json')
+    parser.add_argument('--images', default = './data/coco/images/train2014/')
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
                         action='store_true')
@@ -123,7 +124,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = COCODataset('./data/coco/annotations/instances_train2014_subtract_voc.json', './data/coco/images/train2014/', training=True)
+    dataset = COCODataset(args.anno, args.images, training=True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
 
     # initilize the network here.
