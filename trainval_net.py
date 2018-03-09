@@ -209,7 +209,7 @@ if __name__ == '__main__':
 
             # append hard example of this image in previous epoch
             if num_hard_box > 0:
-                rois = torch.cat(rois, sorted_previous_rois[im_id][:num_hard_box, :])
+                rois = torch.cat((rois, sorted_previous_rois[im_id][:num_hard_box, :]), 0)
 
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
