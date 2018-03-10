@@ -206,7 +206,7 @@ if __name__ == '__main__':
                 loss_per_layer[i] += loss.data[i]
                 box_per_layer[i] += box_cnt[i]
 
-            loss = loss.mean()
+            loss = loss.sum()
             loss_temp += loss.data[0]
 
             # backward
