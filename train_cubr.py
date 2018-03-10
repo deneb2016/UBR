@@ -119,7 +119,7 @@ if __name__ == '__main__':
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
 
 
-    overlap_threshold = [0.3, 0.5]
+    overlap_threshold = [0.3, 0.4, 0.5]
     num_layer = len(overlap_threshold)
 
     # initilize the network here.

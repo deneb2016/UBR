@@ -37,6 +37,7 @@ class CUBRWrapper:
     def __init__(self, model_path):
         print("loading checkpoint %s" % (model_path))
         checkpoint = torch.load(model_path)
+
         if len(checkpoint['model']) == 38:
             self.cubr = CascasingUBR(2)
         else:
@@ -44,8 +45,8 @@ class CUBRWrapper:
         self.cubr.create_architecture()
         self.cubr.load_state_dict(checkpoint['model'])
 
-        self.cubr.cuda()
-        self.cubr.eval()
+        # self.cubr.cuda()
+        # self.cubr.eval()
 
     # raw_img = h * y * 3 rgb image
     # bbox = n * 4 bounding boxes
@@ -68,6 +69,6 @@ class CUBRWrapper:
 
         return ret
 
-cubr = CUBRWrapper('/home/seungkwan/repo/ubr/vgg16/cubr_1_10_14827.pth')
+cubr = CUBRWrapper('/home/seungkwan/repo/ubr/vgg16/cubr_2_8_14827.pth')
 img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
 # cubr.query(img, np.array([[10, 20, 30, 60], [30, 20, 50, 70]], np.float))
