@@ -58,17 +58,19 @@ class CUBRWrapper:
         rois = new_rois
         data = Variable(data.unsqueeze(0).cuda())
         rois = Variable(rois.cuda())
-        bbox_pred = self.cubr(data, rois)
-        refined_boxes = inverse_transform(rois[:, 1:].data.cpu(), bbox_pred.data.cpu())
-        refined_boxes /= im_scale
-        ret = np.zeros((refined_boxes.size(0), 4))
-        ret[:, 0] = refined_boxes[:, 0].clamp(min=0, max=raw_img.shape[1] - 1).numpy()
-        ret[:, 1] = refined_boxes[:, 1].clamp(min=0, max=raw_img.shape[0] - 1).numpy()
-        ret[:, 2] = refined_boxes[:, 2].clamp(min=0, max=raw_img.shape[1] - 1).numpy()
-        ret[:, 3] = refined_boxes[:, 3].clamp(min=0, max=raw_img.shape[0] - 1).numpy()
+        bbox_pred_list = self.cubr(data, rois)
+        rois = rois[:, 1:].data.cpu()
+        for bbox_pred in bbox_pred_list:
+            refined_boxes = inverse_transform(rois, bbox_pred.data.cpu())
+            rois = torch.zeros((refined_boxes.size(0), 4))
+            rois[:, 0] = refined_boxes[:, 0].clamp(min=0, max=data.size(3) - 1)
+            rois[:, 1] = refined_boxes[:, 1].clamp(min=0, max=data.size(2) - 1)
+            rois[:, 2] = refined_boxes[:, 2].clamp(min=0, max=data.size(3) - 1)
+            rois[:, 3] = refined_boxes[:, 3].clamp(min=0, max=data.size(2) - 1)
 
+        ret = rois.numpy() / im_scale
         return ret
 
 cubr = CUBRWrapper('/home/seungkwan/repo/ubr/vgg16/cubr_2_8_14827.pth')
 img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
-# cubr.query(img, np.array([[10, 20, 30, 60], [30, 20, 50, 70]], np.float))
+cubr.query(img, np.array([[10, 20, 30, 60], [30, 20, 50, 70]], np.float))
