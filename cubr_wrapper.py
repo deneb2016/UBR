@@ -34,14 +34,14 @@ def preprocess(im, rois):
 
 
 class CUBRWrapper:
-    def __init__(self, model_path):
+    def __init__(self, model_path, base_model_path):
         print("loading checkpoint %s" % (model_path))
         checkpoint = torch.load(model_path)
 
         if len(checkpoint['model']) == 38:
-            self.cubr = CascasingUBR(2)
+            self.cubr = CascasingUBR(2, base_model_path)
         else:
-            self.cubr = CascasingUBR(3)
+            self.cubr = CascasingUBR(3, base_model_path)
         self.cubr.create_architecture()
         self.cubr.load_state_dict(checkpoint['model'])
 
@@ -71,6 +71,6 @@ class CUBRWrapper:
         ret = rois.numpy() / im_scale
         return ret
 
-cubr = CUBRWrapper('/home/seungkwan/repo/ubr/vgg16/cubr_2_8_14827.pth')
-img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
-cubr.query(img, np.array([[10, 20, 30, 60], [30, 20, 50, 70]], np.float))
+#cubr = CUBRWrapper('/home/seungkwan/repo/ubr/vgg16/cubr_2_8_14827.pth')
+#img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
+# cubr.query(img, np.array([[10, 20, 30, 60], [30, 20, 50, 70]], np.float))

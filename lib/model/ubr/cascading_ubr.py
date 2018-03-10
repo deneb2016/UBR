@@ -8,9 +8,9 @@ from torch.autograd import Variable
 
 
 class CascasingUBR(nn.Module):
-    def __init__(self, num_layer):
+    def __init__(self, num_layer, base_model_path):
         super(CascasingUBR, self).__init__()
-        self.model_path = 'data/pretrained_model/vgg16_caffe.pth'
+        self.model_path = base_model_path
         self.num_layer = num_layer
 
     def _init_modules(self):

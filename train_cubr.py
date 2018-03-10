@@ -96,6 +96,7 @@ def parse_args():
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load model',
                         default=0, type=int)
+	parser.add_argument('--base_model_path', default = 'data/pretrained_model/vgg16_caffe.pth')
 
     args = parser.parse_args()
     return args
@@ -124,7 +125,7 @@ if __name__ == '__main__':
 
     # initilize the network here.
     if args.net == 'vgg16':
-        cubr = CascasingUBR(num_layer)
+        cubr = CascasingUBR(num_layer, args.base_model_path)
     else:
         print("network is not defined")
         pdb.set_trace()

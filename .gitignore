@@ -1,0 +1,8 @@
+data/*
+data
+.idea
+.idea/*
+*.pyc
+*~
+*.so
+.gitignore
