@@ -11,12 +11,13 @@ import cv2
 
 
 class COCODataset(data.Dataset):
-    def __init__(self, anno_path, img_path, training):
+    def __init__(self, anno_path, img_path, training, multi_scale=True):
         print('dataset loading...')
         self._anno = json.load(open(anno_path))
         self._object_set = {}
         self._image_set = []
         self.training = training
+        self.multi_scale = multi_scale
         crowd_img = {}
         for i, obj in enumerate(self._anno['annotations']):
             im_id = obj['image_id']
@@ -73,8 +74,11 @@ class COCODataset(data.Dataset):
         im -= np.array([[[102.9801, 115.9465, 122.7717]]])
         im_shape = im.shape
         im_size_min = np.min(im_shape[0:2])
-        im_scale = 600 / float(im_size_min)
-        #im_scale = (np.random.choice([480, 576, 688, 864, 1000]) if self.training else 600) / float(im_size_min)
+
+        if self.multi_scale:
+            im_scale = (np.random.choice([480, 576, 688, 864, 1000]) if self.training else 600) / float(im_size_min)
+        else:
+            im_scale = 600 / float(im_size_min)
         im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)
 
         data = torch.from_numpy(im)
