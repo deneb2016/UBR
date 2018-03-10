@@ -45,8 +45,8 @@ class CUBRWrapper:
         self.cubr.create_architecture()
         self.cubr.load_state_dict(checkpoint['model'])
 
-        # self.cubr.cuda()
-        # self.cubr.eval()
+        self.cubr.cuda()
+        self.cubr.eval()
 
     # raw_img = h * y * 3 rgb image
     # bbox = n * 4 bounding boxes
