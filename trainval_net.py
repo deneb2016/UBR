@@ -124,7 +124,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = COCODataset(args.anno, args.images, training=True)
+    dataset = COCODataset(args.anno, args.images, training=True, multi_scale=False)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
 
     # initilize the network here.

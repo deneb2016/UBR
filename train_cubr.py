@@ -115,7 +115,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = COCODataset('./data/coco/annotations/instances_train2014_subtract_voc.json', './data/coco/images/train2014/', training=True)
+    dataset = COCODataset('./data/coco/annotations/instances_train2014_subtract_voc.json', './data/coco/images/train2014/', training=True, multi_scale=False)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
 
 
