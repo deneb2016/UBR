@@ -59,7 +59,7 @@ class CUBRWrapper:
         data = Variable(data.unsqueeze(0).cuda())
         rois = Variable(rois.cuda())
         bbox_pred = self.cubr(data, rois)
-        refined_boxes = inverse_transform(rois[:, 1:].data.cpu(), bbox_pred.data.cpu())
+        bbox_pred = bbox_pred[0]; refined_boxes = inverse_transform(rois[:, 1:].data.cpu(), bbox_pred.data.cpu())
         refined_boxes /= im_scale
         ret = np.zeros((refined_boxes.size(0), 4))
         ret[:, 0] = refined_boxes[:, 0].clamp(min=0, max=raw_img.shape[1] - 1).numpy()
