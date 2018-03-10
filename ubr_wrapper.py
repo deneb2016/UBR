@@ -34,8 +34,8 @@ def preprocess(im, rois):
 
 
 class UBRWrapper:
-    def __init__(self, model_path):
-        self.UBR = UBR_VGG()
+    def __init__(self, model_path, base_model_path):
+        self.UBR = UBR_VGG(base_model_path)
         self.UBR.create_architecture()
         print("loading checkpoint %s" % (model_path))
         checkpoint = torch.load(model_path)
@@ -65,8 +65,8 @@ class UBRWrapper:
 
         return ret
 
-ubr = UBRWrapper('/home/seungkwan/repo/ubr/vgg16/coco2014_train_subtract_voc/ubr_4_19_14827.pth')
-img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
-ubr.query(img, np.array([[10, 20, 30, 60],
-                         [30, 20, 50, 70]
-                         ], np.float))
+#ubr = UBRWrapper('/home/seungkwan/repo/ubr/vgg16/coco2014_train_subtract_voc/ubr_4_19_14827.pth')
+#img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
+#ubr.query(img, np.array([[10, 20, 30, 60],
+#                         [30, 20, 50, 70]
+#                         ], np.float))
