@@ -58,6 +58,7 @@ def parse_args():
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
                         action='store_true')
+    parser.add_argument('--multiscale', action = 'store_true')
 
     parser.add_argument('--gen_box_var', type=float, help='variance parameter for random generation of bbox')
 
@@ -105,6 +106,7 @@ def parse_args():
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load model',
                         default=0, type=int)
+    parser.add_argument('--base_model_path', default = 'data/pretrained_model/vgg16_caffe.pth')
 
     args = parser.parse_args()
     return args
@@ -124,12 +126,12 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = COCODataset(args.anno, args.images, training=True, multi_scale=False)
+    dataset = COCODataset(args.anno, args.images, training=True, multi_scale=args.multiscale)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
 
     # initilize the network here.
     if args.net == 'vgg16':
-        UBR = UBR_VGG()
+        UBR = UBR_VGG(args.base_model_path)
     else:
         print("network is not defined")
         pdb.set_trace()
