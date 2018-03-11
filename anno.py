@@ -3,7 +3,7 @@ import json
 
 remove_categories = [1, 2, 3, 4, 5, 6, 7, 9, 16, 17, 18, 19, 20, 21, 44, 62, 63, 64, 67, 72]
 
-K = 1000
+K = 5000
 
 def keep_image(img):
 	return annotations.get(img['id'], {}).get('category_id') not in remove_categories
