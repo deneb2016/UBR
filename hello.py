@@ -107,42 +107,32 @@
 #     return inter / union  # [A,B]
 #
 #
-# def generate_adjacent_boxes(base_box, num_boxes_per_base, im_width, im_height, var, use_gaussian=False):
+# def generate_adjacent_boxes(base_box, num_boxes_per_base, im_width, im_height, pos_var, scale_var):
 #     #center = (base_box[:, 2:4] + base_box[:, 0:2]) / 2
 #     xmin = base_box[:, 0]
 #     ymin = base_box[:, 1]
 #     width = base_box[:, 2] - base_box[:, 0]
 #     height = base_box[:, 3] - base_box[:, 1]
-#     scale = (width + height) / 2
 #
-#     if use_gaussian:
-#         new_width_ratio = torch.from_numpy(np.random.normal(1, var, num_boxes_per_base))
-#         new_height_ratio = torch.from_numpy(np.random.normal(1, var, num_boxes_per_base))
-#         new_x_offset = torch.from_numpy(np.random.normal(0.5, var, num_boxes_per_base))
-#         new_y_offset = torch.from_numpy(np.random.normal(0.5, var, num_boxes_per_base))
-#     else:
-#         new_width_ratio = torch.from_numpy(np.random.uniform(1 - var, 1 + var, num_boxes_per_base))
-#         new_height_ratio = torch.from_numpy(np.random.uniform(1 - var, 1 + var, num_boxes_per_base))
-#         new_x_offset = torch.from_numpy(np.random.uniform(0.5 - var, 0.5 + var, num_boxes_per_base))
-#         new_y_offset = torch.from_numpy(np.random.uniform(0.5 - var, 0.5 + var, num_boxes_per_base))
 #
+#     rand_dist = torch.from_numpy(np.random.multivariate_normal([0.5, 0.5, 1, 1], [[pos_var, 0, 0, 0], [0, pos_var, 0, 0], [0, 0, scale_var, 0], [0, 0, 0, scale_var]], num_boxes_per_base))
+#     print(rand_dist)
 #     ret = torch.zeros((base_box.shape[0], num_boxes_per_base, 4))
 #
 #     for i in range(base_box.shape[0]):
-#         print(width[i])
-#         center_x = xmin[i] + new_x_offset * width[i]
-#         center_y = ymin[i] + new_y_offset * height[i]
-#         new_width = new_width_ratio * width[i]
-#         new_height = new_height_ratio * height[i]
+#         center_x = xmin[i] + rand_dist[:, 0] * width[i]
+#         center_y = ymin[i] + rand_dist[:, 1] * height[i]
+#         new_width = width[i] * rand_dist[:, 2]
+#         new_height = height[i] * rand_dist[:, 3]
 #
 #         ret[i, :, 0] = center_x - new_width / 2
 #         ret[i, :, 1] = center_y - new_height / 2
 #         ret[i, :, 2] = center_x + new_width / 2
 #         ret[i, :, 3] = center_y + new_height / 2
-#         ret[i, :, 0].clamp_(min=0, max=im_width)
-#         ret[i, :, 1].clamp_(min=0, max=im_height)
-#         ret[i, :, 2].clamp_(min=0, max=im_width)
-#         ret[i, :, 3].clamp_(min=0, max=im_height)
+#         ret[i, :, 0].clamp_(min=0, max=im_width - 1)
+#         ret[i, :, 1].clamp_(min=0, max=im_height - 1)
+#         ret[i, :, 2].clamp_(min=0, max=im_width - 1)
+#         ret[i, :, 3].clamp_(min=0, max=im_height - 1)
 #
 #     return ret
 #
@@ -153,28 +143,23 @@
 #     plt.hlines(prop[1], prop[0], prop[2], colors=color)
 #     plt.hlines(prop[3], prop[0], prop[2], colors=color)
 #
-# base = torch.from_numpy(np.array([[30, 20, 70, 50]], np.float32))
-# num = 1000
-# prop = generate_adjacent_boxes(base, num, 150, 150, 0.3, True)
-# for j in range(base.shape[0]):
-#     draw_box(base[j], 'r')
-#     iou = jaccard(base[j:j + 1], prop[j])
-#     print(iou)
-#     print(iou.gt(0.9).sum())
-#     print(iou.gt(0.8).sum())
-#     print(iou.gt(0.7).sum())
-#     print(iou.gt(0.6).sum())
-#     print(iou.gt(0.5).sum())
-#     print(iou.gt(0.4).sum())
-#     print(iou.gt(0.3).sum())
-#     print(iou.gt(0.2).sum())
-#     print(iou.gt(0.1).sum())
-#     print(iou.min())
-#     # for i in range(num):
-#     #     if 0.4 > iou[0, i] > 0.3:
-#     #         draw_box(prop[j, i, :], 'y')
-# plt.show()
 #
+# base = torch.from_numpy(np.array([[30, 20, 60, 50]], np.float32))
+# draw_box(base[0], 'r')
+# num = 1000
+# prop = generate_adjacent_boxes(base, num, 150, 150, 0.1, 0.01)
+# for j in range(base.shape[0]):
+#     iou = jaccard(base[j:j + 1], prop[j])
+#     aa = [num]
+#     for i in range(1, 10):
+#         aa.append(iou.gt(i / 10).sum())
+#
+#     for i in range(1, 10):
+#         print(aa[i - 1] - aa[i])
+#     #for i in range(num):
+#        # draw_box(prop[j, i, :], 'y')
+# plt.show()
+# #
 #
 #
 #
@@ -244,12 +229,19 @@
 # #     print(i, here['full_path'])
 # #     img = imread(here['full_path'])
 # #     print(img.shape)
+#
+# import torch
+# import numpy as np
+#
+# from lib.model.utils.box_utils import inverse_transform
+# from torch.autograd import Variable
+# a = Variable(torch.from_numpy(np.array([[10, 10, 30, 30]], np.float)))
+# b = Variable(torch.from_numpy(np.array([[0.1, 0.01, -0.5, 0.2]], np.float)))
+# print(a, b, inverse_transform(a, b))
 
-import torch
+from scipy.io import loadmat, savemat
 import numpy as np
-
-from lib.model.utils.box_utils import inverse_transform
-from torch.autograd import Variable
-a = Variable(torch.from_numpy(np.array([[10, 10, 30, 30]], np.float)))
-b = Variable(torch.from_numpy(np.array([[0.1, 0.01, -0.5, 0.2]], np.float)))
-print(a, b, inverse_transform(a, b))
+dic = {'aaa' : np.array([[1, 2, 3], [4, 5, 6]])}
+savemat('./haha.mat', dic)
+dic = loadmat('./haha.mat')
+print(dic)

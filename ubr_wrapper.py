@@ -64,9 +64,3 @@ class UBRWrapper:
         ret[:, 3] = refined_boxes[:, 3].clamp(min=0, max=raw_img.shape[0] - 1).numpy()
 
         return ret
-
-ubr = UBRWrapper('/home/seungkwan/repo/ubr/vgg16/coco2014_train_subtract_voc/ubr_4_19_14827.pth')
-img = imread('/home/seungkwan/ubr/data/coco/images/val2014/COCO_val2014_000000000241.jpg')
-ubr.query(img, np.array([[10, 20, 30, 60],
-                         [30, 20, 50, 70]
-                         ], np.float))

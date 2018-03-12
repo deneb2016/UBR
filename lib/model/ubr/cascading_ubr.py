@@ -8,10 +8,11 @@ from torch.autograd import Variable
 
 
 class CascasingUBR(nn.Module):
-    def __init__(self, num_layer, base_model_path):
+    def __init__(self, num_layer, base_model_path, backprop_between_regressor=False):
         super(CascasingUBR, self).__init__()
         self.model_path = base_model_path
         self.num_layer = num_layer
+        self.backprop_between_regressor = backprop_between_regressor
 
     def _init_modules(self):
         vgg = models.vgg16()
@@ -54,19 +55,55 @@ class CascasingUBR(nn.Module):
     def forward(self, im_data, rois):
         base_feat = self.base(im_data)
         all_pred = []
-        for i in range(self.num_layer):
-            pred = self.regress_box(base_feat, rois, self.bbox_pred_layers[i])
-            all_pred += [pred]
-            refined_rois = torch.zeros((rois.size(0), 5)).cuda()
-            refined_rois[:, 1:5] = inverse_transform(rois[:, 1:5].data, pred.data)
-            refined_rois[:, 1].clamp_(min=0, max=im_data.size(3) - 1)
-            refined_rois[:, 2].clamp_(min=0, max=im_data.size(2) - 1)
-            refined_rois[:, 3].clamp_(min=0, max=im_data.size(3) - 1)
-            refined_rois[:, 4].clamp_(min=0, max=im_data.size(2) - 1)
-            refined_rois = Variable(refined_rois)
-            rois = refined_rois
+
+        if self.backprop_between_regressor is False:
+            for i in range(self.num_layer):
+                pred = self.regress_box(base_feat, rois, self.bbox_pred_layers[i])
+                all_pred += [pred]
+                refined_rois = torch.zeros((rois.size(0), 5)).cuda()
+                refined_rois[:, 1:5] = inverse_transform(rois[:, 1:5].data, pred.data)
+                refined_rois[:, 1].clamp_(min=0, max=im_data.size(3) - 1)
+                refined_rois[:, 2].clamp_(min=0, max=im_data.size(2) - 1)
+                refined_rois[:, 3].clamp_(min=0, max=im_data.size(3) - 1)
+                refined_rois[:, 4].clamp_(min=0, max=im_data.size(2) - 1)
+                refined_rois = Variable(refined_rois)
+                rois = refined_rois
+        else:
+            for i in range(self.num_layer):
+                pred = self.regress_box(base_feat, rois, self.bbox_pred_layers[i])
+                all_pred += [pred]
+                rois[:, 1:5] = inverse_transform(rois[:, 1:5], pred)
 
         return all_pred
+
+    def _inverse_transform(self, from_box, delta):
+        widths = from_box[:, 2] - from_box[:, 0] + 1.0
+        heights = from_box[:, 3] - from_box[:, 1] + 1.0
+        ctr_x = from_box[:, 0] + 0.5 * widths
+        ctr_y = from_box[:, 1] + 0.5 * heights
+
+        dx = delta[:, 0]
+        dy = delta[:, 1]
+        dw = delta[:, 2]
+        dh = delta[:, 3]
+
+        pred_ctr_x = dx * widths + ctr_x
+        pred_ctr_y = dy * heights + ctr_y
+        pred_w = torch.exp(dw) * widths
+        pred_h = torch.exp(dh) * heights
+
+        pred_boxes = from_box.clone()
+        # x1
+        pred_boxes[:, 0] = pred_ctr_x - 0.5 * pred_w
+        # y1
+        pred_boxes[:, 1] = pred_ctr_y - 0.5 * pred_h
+        # x2
+        pred_boxes[:, 2] = pred_ctr_x + 0.5 * pred_w
+        # y2
+        pred_boxes[:, 3] = pred_ctr_y + 0.5 * pred_h
+
+        return pred_boxes
+
 
     def regress_box(self, base_feat, rois, box_pred_layer):
         pooled_feat = self.roi_align(base_feat, rois)
