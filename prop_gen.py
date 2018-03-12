@@ -77,7 +77,7 @@ from scipy.io import savemat
 for i in range(0, len(dataset)):
     st = time.time()
     img, gt, id = dataset[i]
-    result = discovery_object(img)
+    result = discovery_object(img, 1000)
 
     print(i, id, len(result), time.time() - st)
     savemat('./proposals_30_sqrt_0.9_0.6/%s' % id[1], {'proposals': result})
