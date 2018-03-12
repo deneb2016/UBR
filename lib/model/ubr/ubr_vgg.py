@@ -5,9 +5,9 @@ from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
 class UBR_VGG(nn.Module):
-    def __init__(self):
+    def __init__(self, base_model_path):
         super(UBR_VGG, self).__init__()
-        self.model_path = 'data/pretrained_model/vgg16_caffe.pth'
+        self.model_path = base_model_path
 
     def _init_modules(self):
         vgg = models.vgg16()

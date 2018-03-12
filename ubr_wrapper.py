@@ -34,8 +34,8 @@ def preprocess(im, rois):
 
 
 class UBRWrapper:
-    def __init__(self, model_path):
-        self.UBR = UBR_VGG()
+    def __init__(self, model_path, base_model_path):
+        self.UBR = UBR_VGG(base_model_path)
         self.UBR.create_architecture()
         print("loading checkpoint %s" % (model_path))
         checkpoint = torch.load(model_path)
