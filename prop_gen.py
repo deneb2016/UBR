@@ -66,8 +66,6 @@ def discovery_object(img, num_prop):
         new_box, _ = new_box.median(0)
         ret.append(new_box.cpu().numpy())
 
-    ret = ubr.query(img, torch.from_numpy(np.array(ret)))
-    ret = ret.cpu().numpy()
     return np.array(ret) + 1
 
 
