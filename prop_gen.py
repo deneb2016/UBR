@@ -47,7 +47,6 @@ def discovery_object(img, num_prop):
 
     st = time.time()
     refined_boxes = ubr.query(img, rand_boxes[:, :4])
-    print('query time', time.time() - st)
 
     iou = jaccard(refined_boxes, refined_boxes)
     degree = (iou * iou.gt(0.9).float()).sum(1) / torch.sqrt(rand_boxes[:, 4])
@@ -66,22 +65,21 @@ def discovery_object(img, num_prop):
         new_box, _ = new_box.median(0)
         ret.append(new_box.cpu().numpy())
 
-    return np.array(ret) + 1
+    return np.array(ret)
 
 
 dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
 from scipy.io import savemat
 
-for i in range(0, len(dataset)):
+for i in range(70, len(dataset)):
     st = time.time()
     img, gt, id = dataset[i]
-    result = discovery_object(img, 1000)
+    result = discovery_object(img, 10)
 
     print(i, id, len(result), time.time() - st)
-    savemat('./proposals_30_sqrt_0.9_0.6/%s' % id[1], {'proposals': result})
+   # savemat('./proposals_30_sqrt_0.9_0.6/%s' % id[1], {'proposals': result + 1}) # this is because matlab use one-based index
 
     plt.imshow(img)
-    print(len(result))
     for j, (xmin, ymin, xmax, ymax) in enumerate(result):
         c = np.random.rand(3)
         plt.hlines(ymin, xmin, xmax, colors=c)
