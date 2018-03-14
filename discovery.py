@@ -37,7 +37,6 @@ def generate_random_boxes(im_height, im_width):
     return ret
 
 
-ubr = UBRWrapper('/home/seungkwan/repo/ubr/ubr_22_19_14827.pth')
 
 
 def get_hcode(pos):
@@ -47,7 +46,7 @@ def get_hcode(pos):
         ret += n
     return ret
 
-def discovery_object(img):
+def discovery_object(ubr, img):
 
     hsh = {}
     rand_boxes = generate_random_boxes(img.shape[0], img.shape[1])
@@ -77,7 +76,7 @@ def discovery_object(img):
         bin_w = int(w / scale_bin_size)
         bin_h = int(h / scale_bin_size)
 
-        votting_map[bin_cx, bin_cy, bin_w, bin_h] += 3 / num_per_scale[int(rand_boxes[i, 4])]
+        votting_map[bin_cx, bin_cy, bin_w, bin_h] += 3.0 / num_per_scale[int(rand_boxes[i, 4])]
 
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
@@ -93,11 +92,11 @@ def discovery_object(img):
                                 what_bin[i] = hcode
                             else:
                                 hsh[hcode].append(i)
-                            votting_map[here] += 2 / num_per_scale[int(rand_boxes[i, 4])]
+                            votting_map[here] += 2.0 / num_per_scale[int(rand_boxes[i, 4])]
 
     ret = []
     for i in range(1, 101):
-        index = votting_map.argmax()
+        index = votting_map.argmax();
         here = np.unravel_index(index, votting_map.shape)
         bin_cx, bin_cy, bin_w, bin_h = here
 
@@ -137,29 +136,30 @@ def discovery_object(img):
     print('prop', len(ret))
     return ret
 
+if __name__ == '__main__':
+	ubr = UBRWrapper('/home/seungkwan/repo/ubr/ubr_22_19_14827.pth')
+	dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
+	from scipy.io import savemat
+	for i in range(100, len(dataset)):
+		st = time.time()
+		img, gt, id = dataset[i]
+		result = discovery_object(ubr, img)
 
-dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
-from scipy.io import savemat
-for i in range(100, len(dataset)):
-    st = time.time()
-    img, gt, id = dataset[i]
-    result = discovery_object(img)
+		print(i + 1, id, time.time() - st)
+		#savemat('./proposals_10_10_new/%s' % id[1], {'proposals': result})
 
-    print(i + 1, id, time.time() - st)
-    #savemat('./proposals_10_10_new/%s' % id[1], {'proposals': result})
+		plt.imshow(img)
+	   # print(result)
+		for j, (xmin, ymin, xmax, ymax) in enumerate(result):
+			c = np.random.rand(3)
+			plt.hlines(ymin, xmin, xmax, colors=c)
+			plt.hlines(ymax, xmin, xmax, colors=c)
+			plt.vlines(xmin, ymin, ymax, colors=c)
+			plt.vlines(xmax, ymin, ymax, colors=c)
 
-    plt.imshow(img)
-   # print(result)
-    for j, (xmin, ymin, xmax, ymax) in enumerate(result):
-        c = np.random.rand(3)
-        plt.hlines(ymin, xmin, xmax, colors=c)
-        plt.hlines(ymax, xmin, xmax, colors=c)
-        plt.vlines(xmin, ymin, ymax, colors=c)
-        plt.vlines(xmax, ymin, ymax, colors=c)
-
-    xmin, ymin, xmax, ymax = result[0, :]
-    plt.hlines(ymin, xmin, xmax, colors='r')
-    plt.hlines(ymax, xmin, xmax, colors='r')
-    plt.vlines(xmin, ymin, ymax, colors='r')
-    plt.vlines(xmax, ymin, ymax, colors='r')
-    plt.show()
+		xmin, ymin, xmax, ymax = result[0, :]
+		plt.hlines(ymin, xmin, xmax, colors='r')
+		plt.hlines(ymax, xmin, xmax, colors='r')
+		plt.vlines(xmin, ymin, ymax, colors='r')
+		plt.vlines(xmax, ymin, ymax, colors='r')
+		plt.show()
