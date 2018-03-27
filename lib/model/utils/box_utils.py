@@ -121,44 +121,80 @@ def inverse_transform(from_box, delta):
     return pred_boxes
 
 
-def generate_adjacent_boxes(base_box, num_boxes_per_base, im_width, im_height, var, use_gaussian=False):
-    #center = (base_box[:, 2:4] + base_box[:, 0:2]) / 2
-    xmin = base_box[:, 0]
-    ymin = base_box[:, 1]
-    width = base_box[:, 2] - base_box[:, 0]
-    height = base_box[:, 3] - base_box[:, 1]
-    scale = (width + height) / 2
+def to_center_form(boxes):
+    ret = boxes.clone()
+    ret[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2
+    ret[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2
+    ret[:, 2] = boxes[:, 2] - boxes[:, 0]
+    ret[:, 3] = boxes[:, 3] - boxes[:, 1]
+    return ret
 
-    if use_gaussian:
-        new_width_ratio = torch.from_numpy(np.random.normal(1, var, num_boxes_per_base))
-        new_height_ratio = torch.from_numpy(np.random.normal(1, var, num_boxes_per_base))
-        new_x_offset = torch.from_numpy(np.random.normal(0.5, var, num_boxes_per_base))
-        new_y_offset = torch.from_numpy(np.random.normal(0.5, var, num_boxes_per_base))
-    else:
-        new_width_ratio = torch.from_numpy(np.random.uniform(1 - var, 1 + var, num_boxes_per_base))
-        new_height_ratio = torch.from_numpy(np.random.uniform(1 - var, 1 + var, num_boxes_per_base))
-        new_x_offset = torch.from_numpy(np.random.uniform(0.5 - var, 0.5 + var, num_boxes_per_base))
-        new_y_offset = torch.from_numpy(np.random.uniform(0.5 - var, 0.5 + var, num_boxes_per_base))
 
-    new_height_ratio[0] = 1
-    new_width_ratio[0] = 1
-    new_x_offset[0] = 0.5
-    new_y_offset[0] = 0.5
-    ret = torch.zeros((base_box.shape[0], num_boxes_per_base, 5))
+def to_point_form(boxes):
+    ret = boxes.clone()
+    ret[:, 0] = boxes[:, 0] - boxes[:, 2] / 2
+    ret[:, 1] = boxes[:, 1] - boxes[:, 3] / 2
+    ret[:, 2] = boxes[:, 0] + boxes[:, 2] / 2
+    ret[:, 3] = boxes[:, 1] + boxes[:, 3] / 2
+    return ret
 
-    for i in range(base_box.shape[0]):
-        center_x = xmin[i] + new_x_offset * width[i]
-        center_y = ymin[i] + new_y_offset * height[i]
-        new_width = new_width_ratio * width[i]
-        new_height = new_height_ratio * height[i]
 
-        ret[i, :, 1] = center_x - new_width / 2
-        ret[i, :, 2] = center_y - new_height / 2
-        ret[i, :, 3] = center_x + new_width / 2
-        ret[i, :, 4] = center_y + new_height / 2
+def generate_adjacent_boxes(base_boxes, seed_boxes, im_height, im_width):
+    base_boxes = to_center_form(base_boxes)
+    ret = torch.zeros((base_boxes.size(0), seed_boxes.size(0), 5))
+    for i in range(base_boxes.size(0)):
+        center_x = base_boxes[i, 0] + seed_boxes[:, 0] * base_boxes[i, 2]
+        center_y = base_boxes[i, 1] + seed_boxes[:, 1] * base_boxes[i, 3]
+        width = base_boxes[i, 2] * seed_boxes[:, 2]
+        height = base_boxes[i, 3] * seed_boxes[:, 3]
+        here_boxes = torch.cat([center_x.unsqueeze(1), center_y.unsqueeze(1), width.unsqueeze(1), height.unsqueeze(1)], 1)
+        here_boxes = to_point_form(here_boxes)
+        ret[i, :, 1:] = here_boxes
         ret[i, :, 1].clamp_(min=0, max=im_width - 1)
         ret[i, :, 2].clamp_(min=0, max=im_height - 1)
         ret[i, :, 3].clamp_(min=0, max=im_width - 1)
         ret[i, :, 4].clamp_(min=0, max=im_height - 1)
-
     return ret
+
+
+# def generate_adjacent_boxes(base_box, num_boxes_per_base, im_width, im_height, var, use_gaussian=False):
+#     #center = (base_box[:, 2:4] + base_box[:, 0:2]) / 2
+#     xmin = base_box[:, 0]
+#     ymin = base_box[:, 1]
+#     width = base_box[:, 2] - base_box[:, 0]
+#     height = base_box[:, 3] - base_box[:, 1]
+#     scale = (width + height) / 2
+#
+#     if use_gaussian:
+#         new_width_ratio = torch.from_numpy(np.random.normal(1, var, num_boxes_per_base))
+#         new_height_ratio = torch.from_numpy(np.random.normal(1, var, num_boxes_per_base))
+#         new_x_offset = torch.from_numpy(np.random.normal(0.5, var, num_boxes_per_base))
+#         new_y_offset = torch.from_numpy(np.random.normal(0.5, var, num_boxes_per_base))
+#     else:
+#         new_width_ratio = torch.from_numpy(np.random.uniform(1 - var, 1 + var, num_boxes_per_base))
+#         new_height_ratio = torch.from_numpy(np.random.uniform(1 - var, 1 + var, num_boxes_per_base))
+#         new_x_offset = torch.from_numpy(np.random.uniform(0.5 - var, 0.5 + var, num_boxes_per_base))
+#         new_y_offset = torch.from_numpy(np.random.uniform(0.5 - var, 0.5 + var, num_boxes_per_base))
+#
+#     new_height_ratio[0] = 1
+#     new_width_ratio[0] = 1
+#     new_x_offset[0] = 0.5
+#     new_y_offset[0] = 0.5
+#     ret = torch.zeros((base_box.shape[0], num_boxes_per_base, 5))
+#
+#     for i in range(base_box.shape[0]):
+#         center_x = xmin[i] + new_x_offset * width[i]
+#         center_y = ymin[i] + new_y_offset * height[i]
+#         new_width = new_width_ratio * width[i]
+#         new_height = new_height_ratio * height[i]
+#
+#         ret[i, :, 1] = center_x - new_width / 2
+#         ret[i, :, 2] = center_y - new_height / 2
+#         ret[i, :, 3] = center_x + new_width / 2
+#         ret[i, :, 4] = center_y + new_height / 2
+#         ret[i, :, 1].clamp_(min=0, max=im_width - 1)
+#         ret[i, :, 2].clamp_(min=0, max=im_height - 1)
+#         ret[i, :, 3].clamp_(min=0, max=im_width - 1)
+#         ret[i, :, 4].clamp_(min=0, max=im_height - 1)
+#
+#     return ret

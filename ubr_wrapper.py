@@ -28,7 +28,6 @@ def preprocess(im, rois):
     data = data.permute(2, 0, 1).contiguous()
 
     rois *= im_scale
-    rois = torch.from_numpy(rois)
     # print(data, gt_boxes, data_height, data_width, im_scale, raw_img)
     return data, rois, im_scale
 
@@ -49,18 +48,18 @@ class UBRWrapper:
     # return n * 4 refined boxes
     def query(self, raw_img, bbox):
         data, rois, im_scale = preprocess(raw_img, bbox)
-        new_rois = torch.zeros((bbox.shape[0], 5))
+        new_rois = torch.zeros((bbox.shape[0], 5)).cuda()
         new_rois[:, 1:] = rois[:, :]
         rois = new_rois
         data = Variable(data.unsqueeze(0).cuda())
-        rois = Variable(rois.cuda())
+        rois = Variable(rois)
         bbox_pred = self.UBR(data, rois)
-        refined_boxes = inverse_transform(rois[:, 1:].data.cpu(), bbox_pred.data.cpu())
+        refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
         refined_boxes /= im_scale
-        ret = np.zeros((refined_boxes.size(0), 4))
-        ret[:, 0] = refined_boxes[:, 0].clamp(min=0, max=raw_img.shape[1] - 1).numpy()
-        ret[:, 1] = refined_boxes[:, 1].clamp(min=0, max=raw_img.shape[0] - 1).numpy()
-        ret[:, 2] = refined_boxes[:, 2].clamp(min=0, max=raw_img.shape[1] - 1).numpy()
-        ret[:, 3] = refined_boxes[:, 3].clamp(min=0, max=raw_img.shape[0] - 1).numpy()
+        ret = torch.zeros((refined_boxes.size(0), 4)).cuda()
+        ret[:, 0] = refined_boxes[:, 0].clamp(min=0, max=raw_img.shape[1] - 1)
+        ret[:, 1] = refined_boxes[:, 1].clamp(min=0, max=raw_img.shape[0] - 1)
+        ret[:, 2] = refined_boxes[:, 2].clamp(min=0, max=raw_img.shape[1] - 1)
+        ret[:, 3] = refined_boxes[:, 3].clamp(min=0, max=raw_img.shape[0] - 1)
 
         return ret

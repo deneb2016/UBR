@@ -60,19 +60,15 @@ def parse_args():
                         action='store_true')
     parser.add_argument('--multiscale', action = 'store_true')
 
-    parser.add_argument('--gen_box_var', type=float, help='variance parameter for random generation of bbox')
-
     parser.add_argument('--iou_th', type=float, help='iou threshold to select rois')
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
 
     parser.add_argument('--num_rois', default=128, help='number of rois per iteration')
 
-    parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.3)
+    parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.0)
 
     parser.add_argument('--hem_start_epoch', default=6, type=int)
-
-    parser.add_argument('--gaussian', dest='gaussian', action='store_true', help='whether use gaussian in box generation')
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -177,7 +173,7 @@ if __name__ == '__main__':
 
     hard_ratio = args.hard_ratio
     sorted_previous_rois = {}
-    use_gaussian = args.gaussian
+    seed_boxes = torch.load('seed_boxes.pt').view(-1, 4)
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         UBR.train()
@@ -190,7 +186,7 @@ if __name__ == '__main__':
 
         # From args.hem_start_epoch, start hard example mining
         if epoch < args.hem_start_epoch:
-            num_gen_box = args.num_rois
+            num_gen_box = int(args.num_rois / (1 - args.iou_th))
             num_hard_box = 0
         else:
             num_hard_box = int(args.num_rois * args.hard_ratio)
@@ -212,8 +208,9 @@ if __name__ == '__main__':
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-
-            rois = generate_adjacent_boxes(gt_boxes, num_gen_box // num_box, data_width, data_height, args.gen_box_var, use_gaussian).view(-1, 5)
+            num_per_base = num_gen_box // num_box
+            sampled_seed_boxes = seed_boxes[torch.randperm(10000)[:num_per_base]]
+            rois = generate_adjacent_boxes(gt_boxes, sampled_seed_boxes, data_height, data_width).view(-1, 5)
 
             # append hard example of this image in previous epoch
             if num_hard_box > 0:
@@ -222,11 +219,11 @@ if __name__ == '__main__':
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
             bbox_pred = UBR(im_data, rois)
-            loss, num_refined_rois, _, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
-
+            loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+            #print('num_rois %d, num_selected_rois %d' % (num_rois, num_selected_rois))
             # save refined rois for hard example mining
             _, sorted_indices = loss.sort(0, descending=True)
-            sorted_previous_rois[im_id] = torch.zeros((num_refined_rois, 5))
+            sorted_previous_rois[im_id] = torch.zeros((num_selected_rois, 5))
             sorted_previous_rois[im_id][:, 1:5] = refined_rois[sorted_indices].data
             sorted_previous_rois[im_id][:, 1].clamp_(min=0, max=data_width - 1)
             sorted_previous_rois[im_id][:, 2].clamp_(min=0, max=data_height - 1)

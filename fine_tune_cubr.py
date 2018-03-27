@@ -120,12 +120,12 @@ if __name__ == '__main__':
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
 
 
-    overlap_threshold = [0.3, 0.4, 0.5]
+    overlap_threshold = [0.2, 0.35, 0.5]
     num_layer = len(overlap_threshold)
 
     # initilize the network here.
     if args.net == 'vgg16':
-        cubr = CascasingUBR(num_layer, args.base_model_path)
+        cubr = CascasingUBR(num_layer, args.base_model_path, False, True)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -152,10 +152,11 @@ if __name__ == '__main__':
         load_name = os.path.join(output_dir, 'cubr_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
         print("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
-        args.session = checkpoint['session']
-        args.start_epoch = checkpoint['epoch']
+        args.session = args.checksession
+        args.start_epoch = args.checkepoch + 1
         cubr.load_state_dict(checkpoint['model'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
+        print(checkpoint['optimizer'])
+        #optimizer.load_state_dict(checkpoint['optimizer'])
         lr = optimizer.param_groups[0]['lr']
         print("loaded checkpoint %s" % (load_name))
 
@@ -237,12 +238,13 @@ if __name__ == '__main__':
                 box_per_layer[:] = 0
                 start = time.time()
 
-        save_name = os.path.join(output_dir, 'cubr_{}_{}_{}.pth'.format(args.session, epoch, step))
+        save_name = os.path.join(output_dir, 'fine_tuned_cubr_{}_{}_{}.pth'.format(args.session, epoch, step))
         save_checkpoint({
             'session': args.session,
             'epoch': epoch + 1,
             'model': cubr.state_dict(),
-            'optimizer': optimizer.state_dict()
+            'optimizer': optimizer.state_dict(),
+            'num_layers': num_layer
         }, save_name)
         print('save model: {}'.format(save_name))
 
