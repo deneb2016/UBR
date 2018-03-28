@@ -220,25 +220,30 @@ if __name__ == '__main__':
             gt_boxes = Variable(gt_boxes.cuda())
             bbox_pred = UBR(im_data, rois)
             loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
-            #print('num_rois %d, num_selected_rois %d' % (num_rois, num_selected_rois))
-            # save refined rois for hard example mining
-            _, sorted_indices = loss.sort(0, descending=True)
-            sorted_previous_rois[im_id] = torch.zeros((num_selected_rois, 5))
-            sorted_previous_rois[im_id][:, 1:5] = refined_rois[sorted_indices].data
-            sorted_previous_rois[im_id][:, 1].clamp_(min=0, max=data_width - 1)
-            sorted_previous_rois[im_id][:, 2].clamp_(min=0, max=data_height - 1)
-            sorted_previous_rois[im_id][:, 3].clamp_(min=0, max=data_width - 1)
-            sorted_previous_rois[im_id][:, 4].clamp_(min=0, max=data_height - 1)
 
-            loss = loss.mean()
-            loss_temp += loss.data[0]
+            if loss is None:
+                loss_temp = 1000000
+                print('zero mached')
+            else:
+                #print('num_rois %d, num_selected_rois %d' % (num_rois, num_selected_rois))
+                # save refined rois for hard example mining
+                _, sorted_indices = loss.sort(0, descending=True)
+                sorted_previous_rois[im_id] = torch.zeros((num_selected_rois, 5))
+                sorted_previous_rois[im_id][:, 1:5] = refined_rois[sorted_indices].data
+                sorted_previous_rois[im_id][:, 1].clamp_(min=0, max=data_width - 1)
+                sorted_previous_rois[im_id][:, 2].clamp_(min=0, max=data_height - 1)
+                sorted_previous_rois[im_id][:, 3].clamp_(min=0, max=data_width - 1)
+                sorted_previous_rois[im_id][:, 4].clamp_(min=0, max=data_height - 1)
 
-            # backward
-            optimizer.zero_grad()
-            loss.backward()
-            if args.net == "vgg16":
-                clip_gradient(UBR, 10.)
-            optimizer.step()
+                loss = loss.mean()
+                loss_temp += loss.data[0]
+
+                # backward
+                optimizer.zero_grad()
+                loss.backward()
+                if args.net == "vgg16":
+                    clip_gradient(UBR, 10.)
+                optimizer.step()
 
             if step % args.disp_interval == 0:
                 end = time.time()

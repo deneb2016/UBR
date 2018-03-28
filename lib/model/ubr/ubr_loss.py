@@ -62,6 +62,9 @@ class UBR_IoULoss(nn.Module):
         bbox_pred = bbox_pred[mask].view(-1, 4)
 
         mask = max_iou.gt(self._overlap_threshold)
+        if mask.sum().data[0] == 0:
+            return None, None, None, None
+
         mask = max_gt_idx[mask]
         mached_gt = gt_box[mask]
 
