@@ -56,14 +56,15 @@ class UBR_IoULoss(nn.Module):
         #print(iou)
         max_iou, max_gt_idx = torch.max(iou, 1)
         mask = max_iou.gt(self._overlap_threshold)
+        if mask.sum().data[0] == 0:
+            return None, None, None, None
         mask = mask.unsqueeze(1).expand(rois.size(0), 4)
 
         rois = rois[mask].view(-1, 4)
         bbox_pred = bbox_pred[mask].view(-1, 4)
 
         mask = max_iou.gt(self._overlap_threshold)
-        if mask.sum().data[0] == 0:
-            return None, None, None, None
+
 
         mask = max_gt_idx[mask]
         mached_gt = gt_box[mask]
@@ -192,3 +193,38 @@ class CascadingUBR_IoULoss(nn.Module):
         iou = inter / union  # [A,B]
         loss = - torch.log(iou + 0.1)
         return loss
+
+
+class UBR_ClassLoss(nn.Module):
+    def __init__(self, overlap_threshold):
+        super(UBR_ClassLoss, self).__init__()
+        self._overlap_threshold = overlap_threshold
+
+    def forward(self, rois, gt_box, class_pred, gt_categories):
+        num_rois = rois.size(0)
+        num_categories = class_pred.size(1)
+        iou = jaccard(rois, gt_box)
+        #print(iou)
+        max_iou, max_gt_idx = torch.max(iou, 1)
+        mask = max_iou.gt(self._overlap_threshold)
+        if mask.sum() == 0:
+            return None, None, None
+        mask = mask.unsqueeze(1).expand(num_rois, num_categories)
+
+        class_pred = class_pred[mask].view(-1, num_categories)
+        #print(class_pred, gt_categories)
+
+        mask = max_iou.gt(self._overlap_threshold)
+
+        mask = max_gt_idx[mask]
+        mached_gt = gt_categories[mask].squeeze()
+        #print(class_pred, mached_gt)
+        loss = F.cross_entropy(class_pred, mached_gt)
+        if loss.gt(10).sum().data[0] != 0:
+            print(mask)
+            print(rois)
+            print(class_pred)
+            print(gt_categories)
+            print(mached_gt)
+        return loss, class_pred.size(0), num_rois
+

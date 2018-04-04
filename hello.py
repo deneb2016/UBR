@@ -434,111 +434,152 @@ from matplotlib import pyplot as plt
 import numpy as np
 import torch
 
+#
+# def intersect(box_a, box_b):
+#     """ We resize both tensors to [A,B,2] without new malloc:
+#     [A,2] -> [A,1,2] -> [A,B,2]
+#     [B,2] -> [1,B,2] -> [A,B,2]
+#     Then we compute the area of intersect between box_a and box_b.
+#     Args:
+#       box_a: (tensor) bounding boxes, Shape: [A,4].
+#       box_b: (tensor) bounding boxes, Shape: [B,4].
+#     Return:
+#       (tensor) intersection area, Shape: [A,B].
+#     """
+#     A = box_a.size(0)
+#     B = box_b.size(0)
+#     max_xy = torch.min(box_a[:, 2:].unsqueeze(1).expand(A, B, 2),
+#                        box_b[:, 2:].unsqueeze(0).expand(A, B, 2))
+#     min_xy = torch.max(box_a[:, :2].unsqueeze(1).expand(A, B, 2),
+#                        box_b[:, :2].unsqueeze(0).expand(A, B, 2))
+#     inter = torch.clamp((max_xy - min_xy), min=0)
+#     return inter[:, :, 0] * inter[:, :, 1]
+#
+#
+# def jaccard(box_a, box_b):
+#     """Compute the jaccard overlap of two sets of boxes.  The jaccard overlap
+#     is simply the intersection over union of two boxes.  Here we operate on
+#     ground truth boxes and default boxes.
+#     E.g.:
+#         A ∩ B / A ∪ B = A ∩ B / (area(A) + area(B) - A ∩ B)
+#     Args:
+#         box_a: (tensor) Ground truth bounding boxes, Shape: [num_objects,4]
+#         box_b: (tensor) Prior boxes from priorbox layers, Shape: [num_priors,4]
+#     Return:
+#         jaccard overlap: (tensor) Shape: [box_a.size(0), box_b.size(0)]
+#     """
+#     inter = intersect(box_a, box_b)
+#     area_a = ((box_a[:, 2] - box_a[:, 0]) *
+#               (box_a[:, 3] - box_a[:, 1])).unsqueeze(1).expand_as(inter)  # [A,B]
+#     area_b = ((box_b[:, 2] - box_b[:, 0]) *
+#               (box_b[:, 3] - box_b[:, 1])).unsqueeze(0).expand_as(inter)  # [A,B]
+#     union = area_a + area_b - inter
+#     return inter / union  # [A,B]
+#
+#
+# def draw_box(prop, color='y'):
+#     plt.vlines(prop[0], prop[1], prop[3], colors=color)
+#     plt.vlines(prop[2], prop[1], prop[3], colors=color)
+#     plt.hlines(prop[1], prop[0], prop[2], colors=color)
+#     plt.hlines(prop[3], prop[0], prop[2], colors=color)
+#
+#
+# def to_center_form(boxes):
+#     ret = boxes.clone()
+#     ret[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2
+#     ret[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2
+#     ret[:, 2] = boxes[:, 2] - boxes[:, 0]
+#     ret[:, 3] = boxes[:, 3] - boxes[:, 1]
+#     return ret
+#
+#
+# def to_point_form(boxes):
+#     ret = boxes.clone()
+#     ret[:, 0] = boxes[:, 0] - boxes[:, 2] / 2
+#     ret[:, 1] = boxes[:, 1] - boxes[:, 3] / 2
+#     ret[:, 2] = boxes[:, 0] + boxes[:, 2] / 2
+#     ret[:, 3] = boxes[:, 1] + boxes[:, 3] / 2
+#     return ret
+#
+#
+# def generate_adjacent_boxes(base_boxes, seed_boxes, im_height, im_width):
+#     base_boxes = to_center_form(base_boxes)
+#     ret = torch.zeros((base_boxes.size(0), seed_boxes.size(0), 5))
+#     for i in range(base_boxes.size(0)):
+#         center_x = base_boxes[i, 0] + seed_boxes[:, 0] * base_boxes[i, 2]
+#         center_y = base_boxes[i, 1] + seed_boxes[:, 1] * base_boxes[i, 3]
+#         width = base_boxes[i, 2] * seed_boxes[:, 2]
+#         height = base_boxes[i, 3] * seed_boxes[:, 3]
+#         here_boxes = torch.cat([center_x.unsqueeze(1), center_y.unsqueeze(1), width.unsqueeze(1), height.unsqueeze(1)], 1)
+#         here_boxes = to_point_form(here_boxes)
+#         ret[i, :, 1:] = here_boxes
+#         ret[i, :, 1].clamp_(min=0, max=im_width - 1)
+#         ret[i, :, 2].clamp_(min=0, max=im_height - 1)
+#         ret[i, :, 3].clamp_(min=0, max=im_width - 1)
+#         ret[i, :, 4].clamp_(min=0, max=im_height - 1)
+#     return ret
+#
+#
+# seed_boxes = torch.load('seed_boxes.pt').view(-1, 4)
+# print(seed_boxes)
+#
+# base = torch.from_numpy(np.array([[130, 120, 190, 150], [60, 60, 80, 80]], np.float32))
+# draw_box(base[0], 'r')
+# draw_box(base[1], 'r')
+#
+# sampling_indices = torch.randperm(10000)[:100]
+# sampled_boxes = generate_adjacent_boxes(base, seed_boxes[sampling_indices], 300, 300)
+#
+# for j in range(base.shape[0]):
+#     iou = jaccard(base[j:j + 1], sampled_boxes[j, :, 1:])
+#     cnt = 0
+#     for i in range(9, -1, -1):
+#         th = i / 10 - 0.00001
+#         here_cnt = iou.gt(th).sum()
+#         print(here_cnt - cnt)
+#         cnt = here_cnt
+#     print('--------------------------------------')
+#     for i in range(10):
+#         draw_box(sampled_boxes[j, i, 1:], ['y', 'b'][j])
+# plt.show()
 
-def intersect(box_a, box_b):
-    """ We resize both tensors to [A,B,2] without new malloc:
-    [A,2] -> [A,1,2] -> [A,B,2]
-    [B,2] -> [1,B,2] -> [A,B,2]
-    Then we compute the area of intersect between box_a and box_b.
-    Args:
-      box_a: (tensor) bounding boxes, Shape: [A,4].
-      box_b: (tensor) bounding boxes, Shape: [B,4].
-    Return:
-      (tensor) intersection area, Shape: [A,B].
-    """
-    A = box_a.size(0)
-    B = box_b.size(0)
-    max_xy = torch.min(box_a[:, 2:].unsqueeze(1).expand(A, B, 2),
-                       box_b[:, 2:].unsqueeze(0).expand(A, B, 2))
-    min_xy = torch.max(box_a[:, :2].unsqueeze(1).expand(A, B, 2),
-                       box_b[:, :2].unsqueeze(0).expand(A, B, 2))
-    inter = torch.clamp((max_xy - min_xy), min=0)
-    return inter[:, :, 0] * inter[:, :, 1]
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+from torch.autograd.function import Function
 
 
-def jaccard(box_a, box_b):
-    """Compute the jaccard overlap of two sets of boxes.  The jaccard overlap
-    is simply the intersection over union of two boxes.  Here we operate on
-    ground truth boxes and default boxes.
-    E.g.:
-        A ∩ B / A ∪ B = A ∩ B / (area(A) + area(B) - A ∩ B)
-    Args:
-        box_a: (tensor) Ground truth bounding boxes, Shape: [num_objects,4]
-        box_b: (tensor) Prior boxes from priorbox layers, Shape: [num_priors,4]
-    Return:
-        jaccard overlap: (tensor) Shape: [box_a.size(0), box_b.size(0)]
-    """
-    inter = intersect(box_a, box_b)
-    area_a = ((box_a[:, 2] - box_a[:, 0]) *
-              (box_a[:, 3] - box_a[:, 1])).unsqueeze(1).expand_as(inter)  # [A,B]
-    area_b = ((box_b[:, 2] - box_b[:, 0]) *
-              (box_b[:, 3] - box_b[:, 1])).unsqueeze(0).expand_as(inter)  # [A,B]
-    union = area_a + area_b - inter
-    return inter / union  # [A,B]
+class GradientReversalLayer(Function):
+    @staticmethod
+    def forward(ctx, input):
+        print('forward')
+        return input.clone()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        print('backward')
+        return -grad_output
 
 
-def draw_box(prop, color='y'):
-    plt.vlines(prop[0], prop[1], prop[3], colors=color)
-    plt.vlines(prop[2], prop[1], prop[3], colors=color)
-    plt.hlines(prop[1], prop[0], prop[2], colors=color)
-    plt.hlines(prop[3], prop[0], prop[2], colors=color)
+a = Variable(torch.FloatTensor([1, 2, 3]))
+a.requires_grad = True
 
+b = Variable(torch.FloatTensor([4, 5, 6]))
+b.requires_grad = True
 
-def to_center_form(boxes):
-    ret = boxes.clone()
-    ret[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2
-    ret[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2
-    ret[:, 2] = boxes[:, 2] - boxes[:, 0]
-    ret[:, 3] = boxes[:, 3] - boxes[:, 1]
-    return ret
+c = Variable(torch.FloatTensor([2]))
+c.requires_grad = True
 
+ab = a * b
+ab_r = GradientReversalLayer.apply(ab)
+ab_r = GradientReversalLayer.apply(ab_r)
+ab_r = GradientReversalLayer.apply(ab_r)
 
-def to_point_form(boxes):
-    ret = boxes.clone()
-    ret[:, 0] = boxes[:, 0] - boxes[:, 2] / 2
-    ret[:, 1] = boxes[:, 1] - boxes[:, 3] / 2
-    ret[:, 2] = boxes[:, 0] + boxes[:, 2] / 2
-    ret[:, 3] = boxes[:, 1] + boxes[:, 3] / 2
-    return ret
+abc = ab_r * c
+result = abc.sum()
+print(ab.requires_grad, ab_r.requires_grad)
+print(a.grad, b.grad, c.grad, ab.grad, abc.grad)
 
+result.backward()
 
-def generate_adjacent_boxes(base_boxes, seed_boxes, im_height, im_width):
-    base_boxes = to_center_form(base_boxes)
-    ret = torch.zeros((base_boxes.size(0), seed_boxes.size(0), 5))
-    for i in range(base_boxes.size(0)):
-        center_x = base_boxes[i, 0] + seed_boxes[:, 0] * base_boxes[i, 2]
-        center_y = base_boxes[i, 1] + seed_boxes[:, 1] * base_boxes[i, 3]
-        width = base_boxes[i, 2] * seed_boxes[:, 2]
-        height = base_boxes[i, 3] * seed_boxes[:, 3]
-        here_boxes = torch.cat([center_x.unsqueeze(1), center_y.unsqueeze(1), width.unsqueeze(1), height.unsqueeze(1)], 1)
-        here_boxes = to_point_form(here_boxes)
-        ret[i, :, 1:] = here_boxes
-        ret[i, :, 1].clamp_(min=0, max=im_width - 1)
-        ret[i, :, 2].clamp_(min=0, max=im_height - 1)
-        ret[i, :, 3].clamp_(min=0, max=im_width - 1)
-        ret[i, :, 4].clamp_(min=0, max=im_height - 1)
-    return ret
-
-
-seed_boxes = torch.load('seed_boxes.pt').view(-1, 4)
-print(seed_boxes)
-
-base = torch.from_numpy(np.array([[130, 120, 190, 150], [60, 60, 80, 80]], np.float32))
-draw_box(base[0], 'r')
-draw_box(base[1], 'r')
-
-sampling_indices = torch.randperm(10000)[:100]
-sampled_boxes = generate_adjacent_boxes(base, seed_boxes[sampling_indices], 300, 300)
-
-for j in range(base.shape[0]):
-    iou = jaccard(base[j:j + 1], sampled_boxes[j, :, 1:])
-    cnt = 0
-    for i in range(9, -1, -1):
-        th = i / 10 - 0.00001
-        here_cnt = iou.gt(th).sum()
-        print(here_cnt - cnt)
-        cnt = here_cnt
-    print('--------------------------------------')
-    for i in range(10):
-        draw_box(sampled_boxes[j, i, 1:], ['y', 'b'][j])
-plt.show()
+print(a.grad, b.grad, c.grad, ab.grad, abc.grad)

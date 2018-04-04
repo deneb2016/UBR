@@ -18,9 +18,11 @@ class COCODataset(data.Dataset):
         self._image_set = []
         self.training = training
         self.multi_scale = multi_scale
+        self._id_to_index = {}
         crowd_img = {}
         for i, obj in enumerate(self._anno['annotations']):
             im_id = obj['image_id']
+            category = obj['category_id']
             if im_id not in self._object_set:
                 self._object_set[im_id] = []
             if obj['iscrowd']:
@@ -31,7 +33,12 @@ class COCODataset(data.Dataset):
             ymin = bbox[1]
             xmax = bbox[0] + bbox[2]
             ymax = bbox[1] + bbox[3]
-            self._object_set[im_id].append(np.array([xmin, ymin, xmax, ymax], np.float32))
+            self._id_to_index[category] = 0
+            self._object_set[im_id].append(np.array([xmin, ymin, xmax, ymax, category], np.float32))
+
+        for i, id in enumerate(self._id_to_index):
+            self._id_to_index[id] = i
+            print('%d categories detected' % (i + 1))
 
         for i, img in enumerate(self._anno['images']):
             data = {}
@@ -85,33 +92,20 @@ class COCODataset(data.Dataset):
         data_height, data_width = data.size(0), data.size(1)
         data = data.permute(2, 0, 1).contiguous()
 
-        gt_boxes *= im_scale
         if self.training:
             np.random.shuffle(gt_boxes)
 
+        box_categories = gt_boxes[:, 4].astype(np.long)
+        for i in range(len(box_categories)):
+            box_categories[i] = self._id_to_index[box_categories[i]]
+
+        gt_boxes = gt_boxes[:, :4]
+        gt_boxes *= im_scale
+
         gt_boxes = torch.from_numpy(gt_boxes)
+        box_categories = torch.from_numpy(box_categories)
         #print(data, gt_boxes, data_height, data_width, im_scale, raw_img)
-        return data, gt_boxes, data_height, data_width, im_scale, raw_img, here['id']
-
-    def preprocess(self, im, rois):
-        raw_img = im.copy()
-        # rgb -> bgr
-        im = im[:, :, ::-1]
-        im = im.astype(np.float32, copy=False)
-        im -= np.array([[[102.9801, 115.9465, 122.7717]]])
-        im_shape = im.shape
-        im_size_min = np.min(im_shape[0:2])
-        im_scale = 600 / float(im_size_min)
-        im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)
-
-        data = torch.from_numpy(im)
-        data_height, data_width = data.size(0), data.size(1)
-        data = data.permute(2, 0, 1).contiguous()
-
-        rois *= im_scale
-        rois = torch.from_numpy(rois)
-        # print(data, gt_boxes, data_height, data_width, im_scale, raw_img)
-        return data, rois, data_height, data_width, im_scale, raw_img
+        return data, gt_boxes, box_categories, data_height, data_width, im_scale, raw_img, here['id']
 
     def __len__(self):
         return len(self._image_set)

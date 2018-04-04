@@ -116,7 +116,7 @@ class VOCDetection(data.Dataset):
     def __getitem__(self, index):
         im, gt, h, w, id = self.pull_item(index)
 
-        return im, gt, id
+        return im, gt, h, w, id
 
     def __len__(self):
         return len(self.ids)

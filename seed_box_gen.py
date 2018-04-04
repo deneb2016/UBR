@@ -72,4 +72,4 @@ for i in range(9, -1, -1):
     sampled_boxes[i, :, :] = here_boxes[sampling_idx]
 
 print(sampled_boxes)
-torch.save(sampled_boxes, 'seed_boxes.pt')
+torch.save(sampled_boxes, 'seed_boxes_test.pt')

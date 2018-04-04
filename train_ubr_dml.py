@@ -22,13 +22,13 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
     adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.ubr.ubr_vgg import UBR_VGG
+from lib.model.ubr.ubr_dml import UBR_VGG_DML
 from lib.model.utils.box_utils import generate_adjacent_boxes
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
-from lib.model.ubr.ubr_loss import UBR_IoULoss
+from lib.model.ubr.ubr_loss import UBR_IoULoss, UBR_ClassLoss
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
-
+import torch.nn.functional as F
 
 def parse_args():
     """
@@ -69,6 +69,8 @@ def parse_args():
     parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.0)
 
     parser.add_argument('--hem_start_epoch', default=6, type=int)
+
+    parser.add_argument('--alpha', default=0.1, type=float)
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -127,7 +129,7 @@ if __name__ == '__main__':
 
     # initilize the network here.
     if args.net == 'vgg16':
-        UBR = UBR_VGG(args.base_model_path)
+        UBR = UBR_VGG_DML(args.base_model_path, training=True, num_classes=60)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -171,13 +173,19 @@ if __name__ == '__main__':
     else:
         raise 'invalid loss funtion'
 
+    class_loss_criterion = UBR_ClassLoss(0.5)
+
     hard_ratio = args.hard_ratio
     sorted_previous_rois = {}
     seed_boxes = torch.load('seed_boxes.pt').view(-1, 4)
+    alpha = args.alpha
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         UBR.train()
         loss_temp = 0
+        class_loss_temp = 0
+        box_loss_temp = 0
+
         start = time.time()
 
         if epoch % (args.lr_decay_step + 1) == 0:
@@ -194,7 +202,7 @@ if __name__ == '__main__':
 
         data_iter = iter(dataloader)
         for step in range(len(dataset)):
-            im_data, gt_boxes, _, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
+            im_data, gt_boxes, box_categories, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
             raw_img = raw_img.squeeze().numpy()
             gt_boxes = gt_boxes[0, :, :]
             data_height = data_height[0]
@@ -212,31 +220,24 @@ if __name__ == '__main__':
             sampled_seed_boxes = seed_boxes[torch.randperm(10000)[:num_per_base]]
             rois = generate_adjacent_boxes(gt_boxes, sampled_seed_boxes, data_height, data_width).view(-1, 5)
 
-            # append hard example of this image in previous epoch
-            if num_hard_box > 0:
-                rois = torch.cat((rois, sorted_previous_rois[im_id][:num_hard_box, :]), 0)
-
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
-            bbox_pred = UBR(im_data, rois)
-            loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+            box_categories = Variable(box_categories.squeeze().cuda())
+            bbox_pred, class_pred = UBR(im_data, rois)
+            box_loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
 
-            if loss is None:
+            class_loss, zz, zzz = class_loss_criterion(rois[:, 1:5].data, gt_boxes.data, class_pred, box_categories)
+            if box_loss is None or class_loss is None:
                 loss_temp = 1000000
                 print('zero mached')
             else:
-                #print('num_rois %d, num_selected_rois %d' % (num_rois, num_selected_rois))
-                # save refined rois for hard example mining
-                _, sorted_indices = loss.sort(0, descending=True)
-                sorted_previous_rois[im_id] = torch.zeros((num_selected_rois, 5))
-                sorted_previous_rois[im_id][:, 1:5] = refined_rois[sorted_indices].data
-                sorted_previous_rois[im_id][:, 1].clamp_(min=0, max=data_width - 1)
-                sorted_previous_rois[im_id][:, 2].clamp_(min=0, max=data_height - 1)
-                sorted_previous_rois[im_id][:, 3].clamp_(min=0, max=data_width - 1)
-                sorted_previous_rois[im_id][:, 4].clamp_(min=0, max=data_height - 1)
+                class_loss = class_loss * alpha
+                box_loss = box_loss.mean()
 
-                loss = loss.mean()
+                loss = class_loss + box_loss
                 loss_temp += loss.data[0]
+                class_loss_temp += class_loss.data[0]
+                box_loss_temp += box_loss.data[0]
 
                 # backward
                 optimizer.zero_grad()
@@ -249,9 +250,13 @@ if __name__ == '__main__':
                 end = time.time()
                 if step > 0:
                     loss_temp /= args.disp_interval
-
-                print("[session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f" % (args.session, epoch, step, loss_temp, lr, end - start))
+                    class_loss_temp /= args.disp_interval
+                    box_loss_temp /= args.disp_interval
+                print("[session %d][epoch %2d][iter %4d] loss: %.4f, box_loss: %.4f, class_loss: %.4f, lr: %.2e, time: %f" % (args.session, epoch, step, loss_temp, box_loss_temp, class_loss_temp, lr, end - start))
                 loss_temp = 0
+                class_loss_temp = 0
+                box_loss_temp = 0
+
                 start = time.time()
 
         save_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.session, epoch, step))
