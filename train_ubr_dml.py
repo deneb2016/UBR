@@ -70,6 +70,8 @@ def parse_args():
 
     parser.add_argument('--hem_start_epoch', default=6, type=int)
 
+    parser.add_argument('--dml_start_epoch', default=1, type=int)
+
     parser.add_argument('--alpha', default=0.1, type=float)
 
     # config optimization
@@ -200,6 +202,11 @@ if __name__ == '__main__':
             num_hard_box = int(args.num_rois * args.hard_ratio)
             num_gen_box = args.num_rois - num_hard_box
 
+        if epoch >= args.dml_start_epoch:
+            dml = True
+        else:
+            dml = False
+
         data_iter = iter(dataloader)
         for step in range(len(dataset)):
             im_data, gt_boxes, box_categories, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
@@ -226,7 +233,11 @@ if __name__ == '__main__':
             bbox_pred, class_pred = UBR(im_data, rois)
             box_loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
 
-            class_loss, zz, zzz = class_loss_criterion(rois[:, 1:5].data, gt_boxes.data, class_pred, box_categories)
+            if dml:
+                class_loss, zz, zzz = class_loss_criterion(rois[:, 1:5].data, gt_boxes.data, class_pred, box_categories)
+            else:
+                class_loss = Variable(torch.zeros(1).cuda())
+
             if box_loss is None or class_loss is None:
                 loss_temp = 1000000
                 print('zero mached')
