@@ -22,10 +22,9 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
     adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.ubr.ubr_vgg import UBR_VGG
+from lib.model.ubr.ubr_2stage import UBR_Objectness
 from lib.model.utils.box_utils import generate_adjacent_boxes
-from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
-from lib.model.ubr.ubr_loss import UBR_IoULoss
+from lib.model.ubr.ubr_loss import UBR_ObjectnessLoss
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
 
@@ -62,10 +61,7 @@ def parse_args():
 
     parser.add_argument('--iou_th', type=float, help='iou threshold to select rois')
 
-    parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
-
     parser.add_argument('--num_rois', default=128, help='number of rois per iteration')
-
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -124,7 +120,7 @@ if __name__ == '__main__':
 
     # initilize the network here.
     if args.net == 'vgg16':
-        UBR = UBR_VGG(args.base_model_path)
+        UBR = UBR_Objectness(args.base_model_path)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -148,7 +144,7 @@ if __name__ == '__main__':
         optimizer = torch.optim.SGD(params, momentum=0.9)
 
     if args.resume:
-        load_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+        load_name = os.path.join(output_dir, 'ubr_obj_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
         print("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
         args.session = checkpoint['session']
@@ -161,14 +157,9 @@ if __name__ == '__main__':
     if args.cuda:
         UBR.cuda()
 
-    if args.loss == 'smoothl1':
-        criterion = UBR_SmoothL1Loss(args.iou_th)
-    elif args.loss == 'iou':
-        criterion = UBR_IoULoss(args.iou_th)
-    else:
-        raise 'invalid loss funtion'
+    criterion = UBR_ObjectnessLoss(args.iou_th)
 
-    sorted_previous_rois = {}
+    seed_boxes = torch.load('seed_boxes.pt').view(-1, 4)
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         UBR.train()
@@ -179,7 +170,7 @@ if __name__ == '__main__':
             adjust_learning_rate(optimizer, args.lr_decay_gamma)
             lr *= args.lr_decay_gamma
 
-        num_gen_box = int(args.num_rois)
+        num_gen_box = int(args.num_rois / (1 - args.iou_th))
 
         data_iter = iter(dataloader)
         for step in range(len(dataset)):
@@ -191,27 +182,25 @@ if __name__ == '__main__':
             im_scale = im_scale[0]
             im_id = im_id[0]
             im_data = Variable(im_data.cuda())
-            num_gt_box = gt_boxes.size(0)
+            num_box = gt_boxes.size(0)
             UBR.zero_grad()
 
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-            num_per_base = num_gen_box // num_gt_box
-            rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
-            rand = torch.from_numpy(np.random.uniform(args.iou_th, 0.9999, rand_base.size(0))).float()
-            rois = generate_adjacent_boxes(rand_base, rand, data_height, data_width)
+            num_per_base = num_gen_box // num_box
+            sampled_seed_boxes = seed_boxes[torch.randperm(10000)[:num_per_base]]
+            rois = generate_adjacent_boxes(gt_boxes, sampled_seed_boxes, data_height, data_width).view(-1, 5)
 
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
+            objectness_pred = UBR(im_data, rois)
+            loss, num_selected_rois, num_rois = criterion(rois[:, 1:5], objectness_pred, gt_boxes)
 
-            bbox_pred = UBR(im_data, rois)
-            loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
             if loss is None:
                 loss_temp = 1000000
                 print('zero mached')
             else:
-                loss = loss.mean()
                 loss_temp += loss.data[0]
 
                 # backward
@@ -230,7 +219,7 @@ if __name__ == '__main__':
                 loss_temp = 0
                 start = time.time()
 
-        save_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.session, epoch, step))
+        save_name = os.path.join(output_dir, 'ubr_obj_{}_{}_{}.pth'.format(args.session, epoch, step))
         save_checkpoint({
             'session': args.session,
             'epoch': epoch + 1,

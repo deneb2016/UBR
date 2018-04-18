@@ -22,6 +22,7 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
     adjust_learning_rate, save_checkpoint, clip_gradient
 
+from lib.model.ubr.ubr_2stage import UBR_Objectness
 from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.utils.box_utils import generate_adjacent_boxes, jaccard, inverse_transform
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
@@ -30,7 +31,6 @@ from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
 from lib.voc_data import VOCDetection
 import cv2
-import itertools
 
 def parse_args():
     """
@@ -50,15 +50,10 @@ def parse_args():
                         help='whether use CUDA',
                         action='store_true')
 
-    parser.add_argument('--checksession', dest='checksession',
-                        help='checksession to load model',
-                        default=1, type=int)
-    parser.add_argument('--checkepoch', dest='checkepoch',
-                        help='checkepoch to load model',
-                        default=1, type=int)
-    parser.add_argument('--checkpoint', dest='checkpoint',
-                        help='checkpoint to load model',
-                        default=0, type=int)
+    parser.add_argument('--classifier', dest='classifier', type=str)
+    parser.add_argument('--reg1', dest='reg1', type=str)
+    parser.add_argument('--reg2', dest='reg2', type=str)
+
     parser.add_argument('--base_model_path', default = 'data/pretrained_model/vgg16_caffe.pth')
 
     args = parser.parse_args()
@@ -103,31 +98,43 @@ if __name__ == '__main__':
 
     # initilize the network here.
     if args.net == 'vgg16':
-        UBR = UBR_VGG(args.base_model_path)
+        UBR_CLS = UBR_Objectness(args.base_model_path)
+        UBR1 = UBR_VGG(args.base_model_path)
+        UBR2 = UBR_VGG(args.base_model_path)
     else:
         print("network is not defined")
         pdb.set_trace()
 
-    UBR.create_architecture()
+    UBR_CLS.create_architecture()
+    UBR1.create_architecture()
+    UBR2.create_architecture()
 
-    load_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
-    print("loading checkpoint %s" % (load_name))
+    load_name = os.path.join(output_dir, args.classifier)
     checkpoint = torch.load(load_name)
-    UBR.load_state_dict(checkpoint['model'])
-    print("loaded checkpoint %s" % (load_name))
+    UBR_CLS.load_state_dict(checkpoint['model'])
+
+    load_name = os.path.join(output_dir, args.reg1)
+    checkpoint = torch.load(load_name)
+    UBR1.load_state_dict(checkpoint['model'])
+
+    load_name = os.path.join(output_dir, args.reg2)
+    checkpoint = torch.load(load_name)
+    UBR2.load_state_dict(checkpoint['model'])
 
     if args.cuda:
-        UBR.cuda()
+        UBR_CLS.cuda()
+        UBR1.cuda()
+        UBR2.cuda()
 
     seed_boxes = torch.load('seed_boxes_test.pt').view(-1, 4)
 
-    UBR.eval()
-
-    result = np.zeros((20, 20))
-
-    for i in range(10):
+    UBR_CLS.eval()
+    UBR1.eval()
+    UBR2.eval()
+    for i in range(2, 7):
         data_iter = iter(dataloader)
         tot_rois = 0
+        cor_rois = 0
         for j in range(len(dataset)):
             im_data, gt_boxes, h, w, im_id = dataset[j]
             gt_boxes[:, 0] *= w
@@ -145,18 +152,19 @@ if __name__ == '__main__':
             sampled_seed_boxes = seed_boxes[torch.randperm(1000)[:num_per_base] + (i * 1000)]
             rois = generate_adjacent_boxes(gt_boxes, sampled_seed_boxes, data_height, data_width).view(-1, 5)
             rois = rois.cuda()
-            bbox_pred = UBR(im_data, Variable(rois)).data
+            objectness = UBR_CLS(im_data, Variable(rois)).data.gt(0.5)
+
+            # tot_rois += rois.size(0)
+            # cor_rois += objectness.sum()
+
+            mask = objectness.squeeze().unsqueeze(1).expand(rois.size(0), 4)
+            reg1 = UBR1(im_data, Variable(rois)).data
+            reg2 = UBR2(im_data, Variable(rois)).data
+            reg2[mask] = reg1[mask]
+            bbox_pred = reg2
             refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
             iou = jaccard(refined_boxes, gt_boxes.cuda())
             max_overlap, _ = iou.max(1)
-
-            for j in range(10):
-                result[i, j] += max_overlap.lt((j + 1) / 10).sum() - max_overlap.lt(j / 10).sum()
             tot_rois += rois.size(0)
-        result[i, :] /= tot_rois
-        print(result[i, :])
-
-    for i, j in itertools.product(range(10), range(10)):
-        if j == 0:
-            print('')
-        print('%.4f ' % result[i, j], end='')
+            cor_rois += max_overlap.gt(0.5).sum()
+        print('iou %.2f ~ %.2f: %.4f' % (i / 10, (i + 1) / 10, cor_rois / tot_rois))

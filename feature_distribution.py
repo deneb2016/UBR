@@ -34,7 +34,7 @@ def parse_args():
     """
     Parse input arguments
     """
-    parser = argparse.ArgumentParser(description='Train a Universal Object Box Regressor')
+    parser = argparse.ArgumentParser(description='Feature Distribution')
     parser.add_argument('--net', dest='net',
                         help='vgg16',
                         default='vgg16', type=str)
@@ -66,6 +66,9 @@ def parse_args():
 
     parser.add_argument('--num_rois', default=128, help='number of rois per iteration')
 
+    parser.add_argument('--hard_ratio', type=float, help='ratio of hard example', default=0.0)
+
+    parser.add_argument('--hem_start_epoch', default=6, type=int)
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -168,7 +171,9 @@ if __name__ == '__main__':
     else:
         raise 'invalid loss funtion'
 
+    hard_ratio = args.hard_ratio
     sorted_previous_rois = {}
+    seed_boxes = torch.load('seed_boxes.pt').view(-1, 4)
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         UBR.train()
@@ -179,7 +184,13 @@ if __name__ == '__main__':
             adjust_learning_rate(optimizer, args.lr_decay_gamma)
             lr *= args.lr_decay_gamma
 
-        num_gen_box = int(args.num_rois)
+        # From args.hem_start_epoch, start hard example mining
+        if epoch < args.hem_start_epoch:
+            num_gen_box = int(args.num_rois / (1 - args.iou_th))
+            num_hard_box = 0
+        else:
+            num_hard_box = int(args.num_rois * args.hard_ratio)
+            num_gen_box = args.num_rois - num_hard_box
 
         data_iter = iter(dataloader)
         for step in range(len(dataset)):
@@ -191,26 +202,39 @@ if __name__ == '__main__':
             im_scale = im_scale[0]
             im_id = im_id[0]
             im_data = Variable(im_data.cuda())
-            num_gt_box = gt_boxes.size(0)
+            num_box = gt_boxes.size(0)
             UBR.zero_grad()
 
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-            num_per_base = num_gen_box // num_gt_box
-            rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
-            rand = torch.from_numpy(np.random.uniform(args.iou_th, 0.9999, rand_base.size(0))).float()
-            rois = generate_adjacent_boxes(rand_base, rand, data_height, data_width)
+            num_per_base = num_gen_box // num_box
+            sampled_seed_boxes = seed_boxes[torch.randperm(10000)[:num_per_base]]
+            rois = generate_adjacent_boxes(gt_boxes, sampled_seed_boxes, data_height, data_width).view(-1, 5)
+
+            # append hard example of this image in previous epoch
+            if num_hard_box > 0:
+                rois = torch.cat((rois, sorted_previous_rois[im_id][:num_hard_box, :]), 0)
 
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
-
             bbox_pred = UBR(im_data, rois)
             loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+
             if loss is None:
                 loss_temp = 1000000
                 print('zero mached')
             else:
+                #print('num_rois %d, num_selected_rois %d' % (num_rois, num_selected_rois))
+                # save refined rois for hard example mining
+                _, sorted_indices = loss.sort(0, descending=True)
+                sorted_previous_rois[im_id] = torch.zeros((num_selected_rois, 5))
+                sorted_previous_rois[im_id][:, 1:5] = refined_rois[sorted_indices].data
+                sorted_previous_rois[im_id][:, 1].clamp_(min=0, max=data_width - 1)
+                sorted_previous_rois[im_id][:, 2].clamp_(min=0, max=data_height - 1)
+                sorted_previous_rois[im_id][:, 3].clamp_(min=0, max=data_width - 1)
+                sorted_previous_rois[im_id][:, 4].clamp_(min=0, max=data_height - 1)
+
                 loss = loss.mean()
                 loss_temp += loss.data[0]
 

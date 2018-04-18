@@ -228,3 +228,94 @@ class UBR_ClassLoss(nn.Module):
             print(mached_gt)
         return loss, class_pred.size(0), num_rois
 
+
+class UBR_ZERO_IoULoss(nn.Module):
+    def __init__(self, overlap_threshold):
+        super(UBR_ZERO_IoULoss, self).__init__()
+        self._overlap_threshold = overlap_threshold
+
+    def forward(self, rois, bbox_pred, gt_box, feat):
+        num_rois = rois.size(0)
+        iou = jaccard(rois, gt_box)
+        #print(iou)
+        max_iou, max_gt_idx = torch.max(iou, 1)
+        mask = max_iou.gt(self._overlap_threshold)
+        if mask.sum().data[0] == 0:
+            return None, None, None, None
+        mask = mask.unsqueeze(1).expand(num_rois, 4)
+
+        rois = rois[mask].view(-1, 4)
+        bbox_pred = bbox_pred[mask].view(-1, 4)
+        mask = max_iou.gt(self._overlap_threshold)
+        mask = mask.unsqueeze(1).expand(num_rois, feat.size(1))
+        #print(feat)
+        feat = feat[mask].view(rois.size(0), -1)
+       # print(feat)
+        feat_loss = torch.norm(feat.sum(0), 1)
+    #    print(feat_loss.data[0])
+        mask = max_iou.gt(self._overlap_threshold)
+
+
+        mask = max_gt_idx[mask]
+        mached_gt = gt_box[mask]
+
+        refined_rois = inverse_transform(rois, bbox_pred)
+        loss = self._iou_loss(refined_rois, mached_gt)
+        return loss, rois.size(0), num_rois, refined_rois, feat_loss
+
+    def _intersect(self, box_a, box_b):
+        """ We resize both tensors to [A,B,2] without new malloc:
+        [A,2] -> [A,1,2] -> [A,B,2]
+        [B,2] -> [1,B,2] -> [A,B,2]
+        Then we compute the area of intersect between box_a and box_b.
+        Args:
+          box_a: (tensor) bounding boxes, Shape: [A,4].
+          box_b: (tensor) bounding boxes, Shape: [B,4].
+        Return:
+          (tensor) intersection area, Shape: [A,B].
+        """
+        A = box_a.size(0)
+        B = box_b.size(0)
+        max_xy = torch.min(box_a[:, 2:], box_b[:, 2:])
+        min_xy = torch.max(box_a[:, :2], box_b[:, :2])
+        inter = torch.clamp((max_xy - min_xy), min=0)
+        return inter[:, 0] * inter[:, 1]
+
+    def _iou_loss(self, box_a, box_b):
+        """Compute the jaccard overlap of two sets of boxes.  The jaccard overlap
+        is simply the intersection over union of two boxes.  Here we operate on
+        ground truth boxes and default boxes.
+        E.g.:
+            A ∩ B / A ∪ B = A ∩ B / (area(A) + area(B) - A ∩ B)
+        Args:
+            box_a: (tensor) Ground truth bounding boxes, Shape: [num_objects,4]
+            box_b: (tensor) Prior boxes from priorbox layers, Shape: [num_priors,4]
+        Return:
+            jaccard overlap: (tensor) Shape: [box_a.size(0), box_b.size(0)]
+        """
+        inter = self._intersect(box_a, box_b)
+        area_a = (box_a[:, 2] - box_a[:, 0]) * (box_a[:, 3] - box_a[:, 1])
+        area_b = (box_b[:, 2] - box_b[:, 0]) * (box_b[:, 3] - box_b[:, 1])
+        union = area_a + area_b - inter
+        iou = inter / union  # [A,B]
+        loss = - torch.log(iou + 0.1)
+        return loss
+
+
+class UBR_ObjectnessLoss(nn.Module):
+    def __init__(self, overlap_threshold):
+        super(UBR_ObjectnessLoss, self).__init__()
+        self._overlap_threshold = overlap_threshold
+
+    def forward(self, rois, objectness_pred, gt_box):
+        num_rois = rois.size(0)
+        iou = jaccard(rois, gt_box)
+        #print(iou)
+        max_iou, max_gt_idx = torch.max(iou, 1)
+        mask = max_iou.gt(self._overlap_threshold)
+        if mask.sum().data[0] == 0:
+            return None, None, None
+        target = mask.unsqueeze(1).float()
+
+        loss = F.binary_cross_entropy(objectness_pred, target)
+        return loss, target.sum().data[0], num_rois
