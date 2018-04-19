@@ -119,8 +119,6 @@ if __name__ == '__main__':
     if args.cuda:
         UBR.cuda()
 
-    seed_boxes = torch.load('seed_boxes_test.pt').view(-1, 4)
-
     UBR.eval()
 
     result = np.zeros((20, 20))
@@ -139,19 +137,20 @@ if __name__ == '__main__':
             im_data, gt_boxes, data_height, data_width, im_scale = preprocess(im_data, gt_boxes)
             im_data = im_data.unsqueeze(0)
             im_data = Variable(im_data.cuda())
-            num_box = gt_boxes.size(0)
+            num_gt_box = gt_boxes.size(0)
 
             num_per_base = 30
-            sampled_seed_boxes = seed_boxes[torch.randperm(1000)[:num_per_base] + (i * 1000)]
-            rois = generate_adjacent_boxes(gt_boxes, sampled_seed_boxes, data_height, data_width).view(-1, 5)
+            rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
+            rand = torch.from_numpy(np.random.uniform(i * 0.1, i * 0.1 + 0.1, rand_base.size(0))).float()
+            rois = generate_adjacent_boxes(rand_base, rand, data_height, data_width)
             rois = rois.cuda()
             bbox_pred = UBR(im_data, Variable(rois)).data
             refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
             iou = jaccard(refined_boxes, gt_boxes.cuda())
             max_overlap, _ = iou.max(1)
 
-            for j in range(10):
-                result[i, j] += max_overlap.lt((j + 1) / 10).sum() - max_overlap.lt(j / 10).sum()
+            for th in range(10):
+                result[i, th] += max_overlap.lt((th + 1) / 10).sum() - max_overlap.lt(th / 10).sum()
             tot_rois += rois.size(0)
         result[i, :] /= tot_rois
         print(result[i, :])
@@ -159,4 +158,4 @@ if __name__ == '__main__':
     for i, j in itertools.product(range(10), range(10)):
         if j == 0:
             print('')
-        print('%.4f ' % result[i, j], end='')
+        print('%.4f\t' % result[i, j], end='')
