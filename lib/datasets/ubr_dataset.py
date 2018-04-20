@@ -11,7 +11,7 @@ import cv2
 
 
 class COCODataset(data.Dataset):
-    def __init__(self, anno_path, img_path, training, multi_scale=True):
+    def __init__(self, anno_path, img_path, training, multi_scale=False, flip=False, rotation=False):
         print('dataset loading...')
         self._anno = json.load(open(anno_path))
         self._object_set = {}

@@ -23,7 +23,8 @@ from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
     adjust_learning_rate, save_checkpoint, clip_gradient
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
-from lib.model.utils.box_utils import generate_adjacent_boxes
+from lib.model.utils.box_utils import inverse_transform, jaccard
+from lib.model.utils.rand_box_generator import UniformBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss
 from lib.datasets.ubr_dataset import COCODataset
@@ -64,8 +65,6 @@ def parse_args():
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
 
-    parser.add_argument('--num_rois', default=128, help='number of rois per iteration')
-
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -103,6 +102,18 @@ def parse_args():
 
     args = parser.parse_args()
     return args
+
+
+def draw_box(boxes, col=None):
+    for j, (xmin, ymin, xmax, ymax) in enumerate(boxes):
+        if col is None:
+            c = np.random.rand(3)
+        else:
+            c = col
+        plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
+        plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
+        plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
+        plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
 
 
 if __name__ == '__main__':
@@ -168,7 +179,8 @@ if __name__ == '__main__':
     else:
         raise 'invalid loss funtion'
 
-    sorted_previous_rois = {}
+    random_box_generator = UniformBoxGenerator(args.iou_th)
+
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
         UBR.train()
@@ -179,7 +191,6 @@ if __name__ == '__main__':
             adjust_learning_rate(optimizer, args.lr_decay_gamma)
             lr *= args.lr_decay_gamma
 
-        num_gen_box = int(args.num_rois)
 
         data_iter = iter(dataloader)
         for step in range(len(dataset)):
@@ -197,15 +208,38 @@ if __name__ == '__main__':
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-            num_per_base = num_gen_box // num_gt_box
-            rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
-            rand = torch.from_numpy(np.random.uniform(args.iou_th, 0.9999, rand_base.size(0))).float()
-            rois = generate_adjacent_boxes(rand_base, rand, data_height, data_width)
+            num_per_base = 30
+            if num_gt_box < 2:
+                num_per_base = 50
+            elif num_gt_box > 4:
+                num_per_base = 120 // num_gt_box
 
+            # rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
+            # rand = torch.from_numpy(np.random.uniform(args.iou_th, 0.999, rand_base.size(0))).float()
+            rois = torch.zeros((num_per_base * num_gt_box, 5))
+            cnt = 0
+            for i in range(num_gt_box):
+                here = random_box_generator.get_rand_boxes(gt_boxes[i:i+1, :], num_per_base, data_height, data_width)
+                if here is None:
+                    print('@@@@@ no box @@@@@')
+                    continue
+                rois[cnt:cnt + here.size(0), :] = here
+                cnt += here.size(0)
+            rois = rois[:cnt, :]
+            #print(rois)
+            #rois = random_box_generator.get_rand_boxes(gt_boxes, num_per_base, data_height, data_width)
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
 
             bbox_pred = UBR(im_data, rois)
+
+
+            refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
+            # plt.imshow(raw_img)
+            # draw_box(rois[:, 1:].data / im_scale)
+            #draw_box(refined_boxes / im_scale, 'yellow')
+            # draw_box(gt_boxes.data / im_scale, 'black')
+            # plt.show()
             loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
             if loss is None:
                 loss_temp = 1000000

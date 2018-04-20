@@ -781,36 +781,115 @@
 #
 # plt.plot(np.array(x), np.array(ret))
 # plt.show()
+#
+# from lib.model.utils.box_utils import generate_adjacent_boxes, one2one_jaccard, to_point_form
+# import numpy as np
+# import torch
+#
+# base = torch.FloatTensor([[200, 300, 500, 500]]).expand(10000, 4)
+# #rand = torch.from_numpy(np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])).float()
+# rand = torch.from_numpy(np.random.uniform(0.5, 1, 10000)).float()
+# import time
+# st = time.time()
+# gen_boxes = generate_adjacent_boxes(base, rand, 700, 800)
+# print(time.time() - st)
+# # from matplotlib import pyplot as plt
+# #
+# # for xmin, ymin, xmax, ymax in base:
+# #
+# #     plt.hlines(ymin, xmin, xmax, colors='r')
+# #     plt.hlines(ymax, xmin, xmax, colors='r')
+# #     plt.vlines(xmin, ymin, ymax, colors='r')
+# #     plt.vlines(xmax, ymin, ymax, colors='r')
+# #
+# # for a, xmin, ymin, xmax, ymax in gen_boxes:
+# #
+# #     plt.hlines(ymin, xmin, xmax)
+# #     plt.hlines(ymax, xmin, xmax)
+# #     plt.vlines(xmin, ymin, ymax)
+# #     plt.vlines(xmax, ymin, ymax)
+# #
+# # plt.show()
+# #
+# iou = one2one_jaccard(base, gen_boxes[:, 1:])
+# for i in range(1, 101):
+#     print(iou.lt(i / 100).sum() - iou.lt((i - 1) / 100).sum())
 
-from lib.model.utils.box_utils import generate_adjacent_boxes, one2one_jaccard, to_point_form
-import numpy as np
-import torch
-
-base = torch.FloatTensor([[200, 300, 500, 500]]).expand(10000, 4)
-#rand = torch.from_numpy(np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])).float()
-rand = torch.from_numpy(np.random.uniform(0.5, 1, 10000)).float()
-import time
-st = time.time()
-gen_boxes = generate_adjacent_boxes(base, rand, 700, 800)
-print(time.time() - st)
+# import torch
+# from lib.model.utils.box_utils import generate_adjacent_boxes_uniform, jaccard, to_point_form, to_center_form
 # from matplotlib import pyplot as plt
+# import numpy as np
 #
-# for xmin, ymin, xmax, ymax in base:
 #
-#     plt.hlines(ymin, xmin, xmax, colors='r')
-#     plt.hlines(ymax, xmin, xmax, colors='r')
-#     plt.vlines(xmin, ymin, ymax, colors='r')
-#     plt.vlines(xmax, ymin, ymax, colors='r')
+# def draw_box(boxes, col=None):
+#     for j, (xmin, ymin, xmax, ymax) in enumerate(boxes):
+#         if col is None:
+#             c = np.random.rand(3)
+#         else:
+#             c = col
+#         plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
+#         plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
+#         plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
+#         plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
 #
-# for a, xmin, ymin, xmax, ymax in gen_boxes:
 #
-#     plt.hlines(ymin, xmin, xmax)
-#     plt.hlines(ymax, xmin, xmax)
-#     plt.vlines(xmin, ymin, ymax)
-#     plt.vlines(xmax, ymin, ymax)
 #
+# def inverse_transform(from_box, delta):
+#     widths = from_box[:, 2] - from_box[:, 0]
+#     heights = from_box[:, 3] - from_box[:, 1]
+#     ctr_x = from_box[:, 0] + 0.5 * widths
+#     ctr_y = from_box[:, 1] + 0.5 * heights
+#
+#     dx = delta[:, 0]
+#     dy = delta[:, 1]
+#     dw = delta[:, 2]
+#     dh = delta[:, 3]
+#
+#     pred_ctr_x = dx * widths + ctr_x
+#     pred_ctr_y = dy * heights + ctr_y
+#     pred_w = torch.exp(dw) * widths
+#     pred_h = torch.exp(dh) * heights
+#
+#     pred_boxes = from_box.clone()
+#     # x1
+#     pred_boxes[:, 0] = pred_ctr_x - 0.5 * pred_w
+#     # y1
+#     pred_boxes[:, 1] = pred_ctr_y - 0.5 * pred_h
+#     # x2
+#     pred_boxes[:, 2] = pred_ctr_x + 0.5 * pred_w
+#     # y2
+#     pred_boxes[:, 3] = pred_ctr_y + 0.5 * pred_h
+#
+#     return pred_boxes
+#
+# iou_th = 0.7
+# num_gen = 1000000
+# base_boxes = torch.FloatTensor([[-0.5, -0.5, 0.5, 0.5] for i in range(num_gen)])
+#
+# dx = np.random.uniform((iou_th - 1) / (2 * iou_th), (1 - iou_th) / (2 * iou_th), num_gen)
+# dy = np.random.uniform((iou_th - 1) / (2 * iou_th), (1 - iou_th) / (2 * iou_th), num_gen)
+# dw = np.random.uniform(np.log(iou_th), -np.log(iou_th), num_gen)
+# dh = np.random.uniform(np.log(iou_th), -np.log(iou_th), num_gen)
+# gen_boxes = inverse_transform(base_boxes, torch.FloatTensor([dx, dy, dw, dh]).permute(1, 0))
+#
+# iou = jaccard(base_boxes[0:1, :], gen_boxes)
+# print(iou.gt(iou_th + 0.2).sum())
+# gen_boxes = gen_boxes[iou.gt(iou_th).squeeze().unsqueeze(1).expand(num_gen, 4)].view(-1, 4)
+# draw_box(gen_boxes)
+# draw_box(base_boxes, 'black')
 # plt.show()
-#
-iou = one2one_jaccard(base, gen_boxes[:, 1:])
-for i in range(1, 101):
-    print(iou.lt(i / 100).sum() - iou.lt((i - 1) / 100).sum())
+
+import torch
+from lib.model.utils.box_utils import jaccard, to_point_form, to_center_form
+from matplotlib import pyplot as plt
+from lib.model.utils.rand_box_generator import UniformBoxGenerator
+import numpy as np
+
+generator = UniformBoxGenerator(0.2)
+
+base_boxes = torch.FloatTensor([[20, 20, 600, 600]])
+boxes = generator.get_rand_boxes(base_boxes, 1000, 620, 620)
+iou = jaccard(base_boxes, boxes[:, 1:])
+for th in range(2, 10):
+    print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())
+

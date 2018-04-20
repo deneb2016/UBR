@@ -65,6 +65,18 @@ def parse_args():
     return args
 
 
+def draw_box(boxes, col=None):
+    for j, (xmin, ymin, xmax, ymax) in enumerate(boxes):
+        if col is None:
+            c = np.random.rand(3)
+        else:
+            c = col
+        plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
+        plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
+        plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
+        plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
+
+
 def preprocess(im, rois):
     # rgb -> bgr
     im = im[:, :, ::-1]
@@ -89,7 +101,7 @@ if __name__ == '__main__':
 
     print('Called with args:')
     print(args)
-    np.random.seed(5)
+    np.random.seed(10)
 
     if torch.cuda.is_available() and not args.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
@@ -120,10 +132,11 @@ if __name__ == '__main__':
         UBR.cuda()
 
     UBR.eval()
-
+    for param in UBR.bbox_pred_layer.parameters():
+        print(param.data.abs().sum())
     result = np.zeros((20, 20))
 
-    for i in range(10):
+    for i in range(5, 10):
         data_iter = iter(dataloader)
         tot_rois = 0
         for j in range(len(dataset)):
@@ -139,16 +152,20 @@ if __name__ == '__main__':
             im_data = Variable(im_data.cuda())
             num_gt_box = gt_boxes.size(0)
 
-            num_per_base = 30
+            num_per_base = 5
             rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
-            rand = torch.from_numpy(np.random.uniform(i * 0.1, i * 0.1 + 0.1, rand_base.size(0))).float()
+            rand = torch.from_numpy(np.random.uniform(i * 0.1, i * 0.1 + 0.5, rand_base.size(0))).float()
             rois = generate_adjacent_boxes(rand_base, rand, data_height, data_width)
             rois = rois.cuda()
             bbox_pred = UBR(im_data, Variable(rois)).data
             refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
             iou = jaccard(refined_boxes, gt_boxes.cuda())
             max_overlap, _ = iou.max(1)
-
+            plt.imshow(raw_img)
+            draw_box(rois[:, 1:] / im_scale)
+            draw_box(refined_boxes / im_scale, 'yellow')
+            draw_box(gt_boxes / im_scale, 'black')
+            plt.show()
             for th in range(10):
                 result[i, th] += max_overlap.lt((th + 1) / 10).sum() - max_overlap.lt(th / 10).sum()
             tot_rois += rois.size(0)

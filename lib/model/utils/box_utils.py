@@ -168,7 +168,7 @@ def rand_gen_uniform(base_boxes, want_iou, perfect=False, iter_cnt=20):
 
 
 # point form input
-def generate_adjacent_boxes(base_boxes, want_iou, im_height, im_width):
+def generate_adjacent_boxes_set_iou(base_boxes, want_iou, im_height, im_width):
     assert base_boxes.size(0) == want_iou.size(0)
     base_boxes = to_center_form(base_boxes)
     base_boxes[:, 0] /= im_width
