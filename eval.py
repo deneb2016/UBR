@@ -23,7 +23,8 @@ from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
     adjust_learning_rate, save_checkpoint, clip_gradient
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
-from lib.model.utils.box_utils import generate_adjacent_boxes, jaccard, inverse_transform
+from lib.model.utils.box_utils import jaccard, inverse_transform
+from lib.model.utils.rand_box_generator import TargetIouBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss
 from lib.datasets.ubr_dataset import COCODataset
@@ -59,7 +60,7 @@ def parse_args():
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load model',
                         default=0, type=int)
-    parser.add_argument('--base_model_path', default = 'data/pretrained_model/vgg16_caffe.pth')
+    parser.add_argument('--base_model_path', default='data/pretrained_model/vgg16_caffe.pth')
 
     args = parser.parse_args()
     return args
@@ -132,15 +133,15 @@ if __name__ == '__main__':
         UBR.cuda()
 
     UBR.eval()
-    for param in UBR.bbox_pred_layer.parameters():
-        print(param.data.abs().sum())
-    result = np.zeros((20, 20))
 
-    for i in range(5, 10):
+    result = np.zeros((10, 10))
+
+    for source_th in range(1, 10):
+        random_box_generator = TargetIouBoxGenerator(source_th / 10, (source_th + 1) / 10)
         data_iter = iter(dataloader)
         tot_rois = 0
-        for j in range(len(dataset)):
-            im_data, gt_boxes, h, w, im_id = dataset[j]
+        for data_idx in range(len(dataset)):
+            im_data, gt_boxes, h, w, im_id = dataset[data_idx]
             gt_boxes[:, 0] *= w
             gt_boxes[:, 1] *= h
             gt_boxes[:, 2] *= w
@@ -152,26 +153,41 @@ if __name__ == '__main__':
             im_data = Variable(im_data.cuda())
             num_gt_box = gt_boxes.size(0)
 
-            num_per_base = 5
-            rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
-            rand = torch.from_numpy(np.random.uniform(i * 0.1, i * 0.1 + 0.5, rand_base.size(0))).float()
-            rois = generate_adjacent_boxes(rand_base, rand, data_height, data_width)
+            num_per_base = 30
+            rois = torch.zeros((num_per_base * num_gt_box, 5))
+            cnt = 0
+            for i in range(num_gt_box):
+                rand = torch.from_numpy(np.random.uniform(source_th / 10, (source_th + 1) / 10, num_per_base)).float()
+                here = random_box_generator.get_rand_boxes_by_iou(gt_boxes[i, :], rand, data_height, data_width)
+                if here is None:
+                    print('@@@@@ no box @@@@@')
+                    continue
+                rois[cnt:cnt + here.size(0), :] = here
+                cnt += here.size(0)
+            rois = rois[:cnt, :]
             rois = rois.cuda()
             bbox_pred = UBR(im_data, Variable(rois)).data
             refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
-            iou = jaccard(refined_boxes, gt_boxes.cuda())
-            max_overlap, _ = iou.max(1)
-            plt.imshow(raw_img)
-            draw_box(rois[:, 1:] / im_scale)
-            draw_box(refined_boxes / im_scale, 'yellow')
-            draw_box(gt_boxes / im_scale, 'black')
-            plt.show()
-            for th in range(10):
-                result[i, th] += max_overlap.lt((th + 1) / 10).sum() - max_overlap.lt(th / 10).sum()
-            tot_rois += rois.size(0)
-        result[i, :] /= tot_rois
-        print(result[i, :])
 
+            gt_boxes = gt_boxes.cuda()
+            base_iou = jaccard(rois[:, 1:], gt_boxes)
+            refined_iou = jaccard(refined_boxes, gt_boxes)
+            base_max_overlap, base_max_overlap_idx = base_iou.max(1)
+            refined_max_overlap, refined_max_overlap_idx = refined_iou.max(1)
+            #plt.imshow(raw_img)
+            #draw_box(rois[:, 1:] / im_scale)
+            #draw_box(refined_boxes / im_scale, 'yellow')
+            #draw_box(gt_boxes / im_scale, 'black')
+            #plt.show()
+            for i in range(10):
+                for target_th in range(10):
+                    mask1 = base_max_overlap.gt(i / 10) * base_max_overlap.le((i + 1) / 10)
+                    after_iou = refined_iou[range(refined_iou.size(0)), base_max_overlap_idx]
+                    mask2 = after_iou.gt(target_th / 10) * after_iou.le((target_th + 1) / 10)
+                    result[i, target_th] += (mask1 * mask2).sum()
+            if data_idx % 100 == 0:
+                print(data_idx)
+        print(source_th)
     for i, j in itertools.product(range(10), range(10)):
         if j == 0:
             print('')
