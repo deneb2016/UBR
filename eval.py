@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
     result = np.zeros((10, 10))
 
-    for source_th in range(1, 10):
+    for source_th in range(5, 10):
         random_box_generator = TargetIouBoxGenerator(source_th / 10, (source_th + 1) / 10)
         data_iter = iter(dataloader)
         tot_rois = 0
@@ -153,7 +153,7 @@ if __name__ == '__main__':
             im_data = Variable(im_data.cuda())
             num_gt_box = gt_boxes.size(0)
 
-            num_per_base = 30
+            num_per_base = 1
             rois = torch.zeros((num_per_base * num_gt_box, 5))
             cnt = 0
             for i in range(num_gt_box):
@@ -174,11 +174,11 @@ if __name__ == '__main__':
             refined_iou = jaccard(refined_boxes, gt_boxes)
             base_max_overlap, base_max_overlap_idx = base_iou.max(1)
             refined_max_overlap, refined_max_overlap_idx = refined_iou.max(1)
-            #plt.imshow(raw_img)
-            #draw_box(rois[:, 1:] / im_scale)
-            #draw_box(refined_boxes / im_scale, 'yellow')
-            #draw_box(gt_boxes / im_scale, 'black')
-            #plt.show()
+            plt.imshow(raw_img)
+            draw_box(rois[:, 1:] / im_scale)
+            draw_box(refined_boxes / im_scale, 'yellow')
+            draw_box(gt_boxes / im_scale, 'black')
+            plt.show()
             for i in range(10):
                 for target_th in range(10):
                     mask1 = base_max_overlap.gt(i / 10) * base_max_overlap.le((i + 1) / 10)
