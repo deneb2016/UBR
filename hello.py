@@ -878,7 +878,7 @@
 # draw_box(gen_boxes)
 # draw_box(base_boxes, 'black')
 # plt.show()
-
+#
 import torch
 from lib.model.utils.box_utils import jaccard, to_point_form, to_center_form
 from matplotlib import pyplot as plt
@@ -887,9 +887,83 @@ import numpy as np
 
 generator = UniformBoxGenerator(0.2)
 
-base_boxes = torch.FloatTensor([[20, 20, 600, 600]])
+base_boxes = torch.FloatTensor([[20, 20, 300,300]])
 boxes = generator.get_rand_boxes(base_boxes, 1000, 620, 620)
 iou = jaccard(base_boxes, boxes[:, 1:])
 for th in range(2, 10):
     print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())
+#
+# import queue
+# from nltk.corpus import wordnet as wn
+# import json
+# import numpy as np
+#
+# coco_class_set = []
+# voc_class_set = []
+# score = []
+# for line in open('coco_classes.txt', 'r'):
+#     str = line.rstrip()
+#     #print(str)
+#     coco_class_set.append(str)
+# for line in open('voc_classes.txt', 'r'):
+#     str = line.rstrip()
+#     #print(str)
+#     voc_class_set.append(str)
+#
+# print(coco_class_set)
+# print(voc_class_set)
+#
+# for a in coco_class_set:
+#     sim = 0
+#     for b in voc_class_set:
+#         sim = max(sim, wn.wup_similarity(wn.synsets(a)[0], wn.synsets(b)[0]))
+#     score.append(sim)
+#     print(sim)
+#
+# sorted_idx = np.argsort(score)
+#
+# print(sorted_idx)
+# for i in sorted_idx:
+#     print(coco_class_set[i])
 
+
+# f = open('coco60_categories.txt', 'w')
+# import json
+# anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_train2017.json'))
+# cnt = 0
+# a = ['accessory', 'kitchen', 'furniture', 'indoor']
+# b = ['food']
+# c = ['sports']
+# d = ['electronic', 'appliance', 'outdoor', 'accessory']
+# for c in anno['categories']:
+#     if c['name'] in ['person', 'bicycle', 'car', 'motorcycle', 'airplane',
+#                      'bus', 'train', 'boat', 'bird', 'cat',
+#                      'dog', 'horse', 'sheep', 'cow', 'bottle',
+#                      'chair', 'couch', 'potted plant', 'dining table', 'tv']:
+#         continue
+#
+#     # if c['supercategory'] in ['vehicle', 'animal', 'accessory', 'appliance', 'electronic']:
+#     #     continue
+#
+#     # if c['supercategory'] in ['outdoor', 'indoor', 'kitchen', 'furniture']:
+#     #     continue
+#
+#     print(c['name'], file=f)
+
+#
+# scales = [0.5, 0.75, 1.0]
+# ratio = [1.]
+# cx = []
+# cy = []
+# w = []
+# h = []
+# for scale in scales:
+#     step = scale / 10
+#     dx = -0.5
+#     while dx <= 0.5:
+#         dy = -0.5
+#         while dy <= 0.5:
+#             cx.append(dx)
+#             cy.append(dy)
+#             dy += step
+#         dx += step

@@ -11,13 +11,17 @@ class UniformBoxGenerator:
 
         cnt = 0
         while cnt < seed_pool_size:
-            dx = torch.FloatTensor(np.random.uniform((iou_th - 1) / (2 * iou_th), (1 - iou_th) / (2 * iou_th), seed_pool_size * 10))
-            dy = torch.FloatTensor(np.random.uniform((iou_th - 1) / (2 * iou_th), (1 - iou_th) / (2 * iou_th), seed_pool_size * 10))
-            dw = torch.FloatTensor(np.random.uniform(np.log(iou_th), -np.log(iou_th), seed_pool_size * 10))
-            dh = torch.FloatTensor(np.random.uniform(np.log(iou_th), -np.log(iou_th), seed_pool_size * 10))
+
+            dx = torch.FloatTensor(np.random.uniform(-0.5, 0.5, seed_pool_size * 10))
+            dy = torch.FloatTensor(np.random.uniform(-0.5, 0.5, seed_pool_size * 10))
+            dw = torch.FloatTensor(np.random.uniform(np.log(iou_th), -np.log(0.7), seed_pool_size * 10))
+            dh = torch.FloatTensor(np.random.uniform(np.log(iou_th), -np.log(0.7), seed_pool_size * 10))
             boxes = torch.stack([dx, dy, torch.exp(dw), torch.exp(dh)], 1)
             iou = jaccard(torch.FloatTensor([[-0.5, -0.5, 0.5, 0.5]]), to_point_form(boxes)).squeeze()
             mask = iou.ge(iou_th)
+            # ratio = boxes[:, 3] / boxes[:, 2]
+            # ratio_mask = ratio.ge(0.5) * ratio.le(2.0)
+            # mask *= ratio_mask
             dx = dx[mask]
             dy = dy[mask]
             dw = dw[mask]
@@ -55,6 +59,9 @@ class UniformBoxGenerator:
         ret[:, 1:] = to_point_form(ret[:, 1:])
         #print(ret)
         mask = ret[:, 1].ge(0) * ret[:, 2].ge(0) * ret[:, 3].le(im_width - 1) * ret[:, 4].le(im_height - 1)
+        ratio = dw / dh
+        ratio_mask = ratio.ge(0.333) * ratio.le(3.0)
+        mask *= ratio_mask
         if mask.sum() == 0:
             return None
         ret = ret[mask.unsqueeze(1).expand(ret.size(0), 5)].view(-1, 5)

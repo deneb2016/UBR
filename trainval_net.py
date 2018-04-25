@@ -47,21 +47,21 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
-                        default=10, type=int)
+                        default=1000, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
                         help='directory to save models', default="../repo/ubr")
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
                         default=0, type=int)
-    parser.add_argument('--anno', default = './data/coco/annotations/instances_train2014_subtract_voc.json')
-    parser.add_argument('--images', default = './data/coco/images/train2014/')
+    parser.add_argument('--anno', default = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json')
+    parser.add_argument('--images', default = './data/coco/images/train2017/')
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
                         action='store_true')
     parser.add_argument('--multiscale', action = 'store_true')
 
-    parser.add_argument('--iou_th', type=float, help='iou threshold to select rois')
+    parser.add_argument('--iou_th', type=float, help='iou threshold to use for training')
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
 
@@ -208,11 +208,9 @@ if __name__ == '__main__':
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-            num_per_base = 30
-            if num_gt_box < 2:
-                num_per_base = 50
-            elif num_gt_box > 4:
-                num_per_base = 120 // num_gt_box
+            num_per_base = 50
+            if num_gt_box > 4:
+                num_per_base = 200 // num_gt_box
 
             # rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
             # rand = torch.from_numpy(np.random.uniform(args.iou_th, 0.999, rand_base.size(0))).float()
