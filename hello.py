@@ -885,10 +885,11 @@ from matplotlib import pyplot as plt
 from lib.model.utils.rand_box_generator import UniformBoxGenerator
 import numpy as np
 
-generator = UniformBoxGenerator(0.2)
+generator = UniformBoxGenerator(0.3)
 
-base_boxes = torch.FloatTensor([[20, 20, 300,300]])
-boxes = generator.get_rand_boxes(base_boxes, 1000, 620, 620)
+base_boxes = torch.FloatTensor([[10, 10, 300,300]])
+boxes = generator.get_rand_boxes(base_boxes, 1000, 320, 320)
+print(boxes.size(0))
 iou = jaccard(base_boxes, boxes[:, 1:])
 for th in range(2, 10):
     print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())

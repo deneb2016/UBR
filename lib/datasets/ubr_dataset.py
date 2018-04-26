@@ -38,7 +38,6 @@ class COCODataset(data.Dataset):
 
         for i, id in enumerate(self._id_to_index):
             self._id_to_index[id] = i
-            print('%d categories detected' % (i + 1))
 
         for i, img in enumerate(self._anno['images']):
             data = {}

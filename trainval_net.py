@@ -47,7 +47,7 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
-                        default=1000, type=int)
+                        default=100, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
                         help='directory to save models', default="../repo/ubr")
@@ -185,6 +185,7 @@ if __name__ == '__main__':
         # setting to train mode
         UBR.train()
         loss_temp = 0
+        mean_boxes_per_iter = 0
         start = time.time()
 
         if epoch % (args.lr_decay_step + 1) == 0:
@@ -224,6 +225,8 @@ if __name__ == '__main__':
                 rois[cnt:cnt + here.size(0), :] = here
                 cnt += here.size(0)
             rois = rois[:cnt, :]
+            mean_boxes_per_iter += rois.size(0)
+            #print(rois.size(0))
             #print(rois)
             #rois = random_box_generator.get_rand_boxes(gt_boxes, num_per_base, data_height, data_width)
             rois = Variable(rois.cuda())
@@ -257,9 +260,11 @@ if __name__ == '__main__':
                 end = time.time()
                 if step > 0:
                     loss_temp /= args.disp_interval
+                    mean_boxes_per_iter /= args.disp_interval
 
-                print("[session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f" % (args.session, epoch, step, loss_temp, lr, end - start))
+                print("[session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f, boxes: %.1f" % (args.session, epoch, step, loss_temp, lr, end - start, mean_boxes_per_iter))
                 loss_temp = 0
+                mean_boxes_per_iter = 0
                 start = time.time()
 
         save_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.session, epoch, step))

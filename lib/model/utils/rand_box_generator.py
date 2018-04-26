@@ -39,12 +39,12 @@ class UniformBoxGenerator:
     def get_rand_boxes(self, base_boxes, num_gen_per_base, im_height, im_width):
         num_base_boxes = base_boxes.size(0)
         num_tot_gen = num_base_boxes * num_gen_per_base
-        num_gen_per_base *= 20
+        num_gen_per_base *= 100
         base_boxes = to_center_form(base_boxes)
         base_boxes = base_boxes.unsqueeze(0).expand(num_gen_per_base, num_base_boxes, 4).contiguous()
         base_boxes = base_boxes.view(num_base_boxes * num_gen_per_base, 4)
 
-        selected_indices = torch.LongTensor(np.random.choice(self._seed_pool_size, base_boxes.size(0)))
+        selected_indices = torch.LongTensor(np.random.choice(self._seed_pool_size, base_boxes.size(0), replace=False))
         dx = self._delta[:, 0][selected_indices]
         dy = self._delta[:, 1][selected_indices]
         dw = self._delta[:, 2][selected_indices]
