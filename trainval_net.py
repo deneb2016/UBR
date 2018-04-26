@@ -351,7 +351,7 @@ def train():
             adjust_learning_rate(optimizer, args.lr_decay_gamma)
             lr *= args.lr_decay_gamma
 
-        if epoch % save_name == 0:
+        if epoch % args.save_interval == 0:
             save_name = os.path.join(output_dir, '{}_{}_{}_{}.pth'.format(args.net, args.session, epoch, step))
             save_checkpoint({
                 'net' : args.net,
