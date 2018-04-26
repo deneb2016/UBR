@@ -47,6 +47,7 @@ def parse_args():
                         help='number of worker to load data',
                         default=0, type=int)
 
+    parser.add_argument('--dataset', type=str)
     parser.add_argument('--train_anno', default = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json')
     parser.add_argument('--val_anno', default = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json')
     parser.add_argument('--train_images', default = './data/coco/images/train2017/')
@@ -177,6 +178,24 @@ def train():
     output_dir = args.save_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
+    if args.dataset == 'coco60_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json'
+    elif args.dataset == 'coco40_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco40classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco40classes_1000_2000.json'
+    elif args.dataset == 'coco20_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco20classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco20classes_1000_2000.json'
+    elif args.dataset == 'voc20_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_voc20classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_voc20classes_1000_2000.json'
+    else:
+        print('@@@@@no dataset@@@@@')
+        return
+
+
 
     train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
