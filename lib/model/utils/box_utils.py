@@ -130,62 +130,62 @@ def to_point_form(boxes):
     ret[:, 3] = boxes[:, 1] + boxes[:, 3] / 2
     return ret
 
-
-var = 1
-pseudo_gaussian = np.random.multivariate_normal([0, 0, 0, 0], [[var, 0, 0, 0], [0, var, 0, 0], [0, 0, var, 0], [0, 0, 0, var]], 100000)
-pseudo_gaussian = torch.from_numpy(pseudo_gaussian).float()
-pseudo_gaussian /= torch.norm(pseudo_gaussian, 2, 1).unsqueeze(1)
-
-
-# center form input
-def rand_gen_uniform(base_boxes, want_iou, perfect=False, iter_cnt=20):
-    dir = pseudo_gaussian[torch.from_numpy(np.random.choice(100000, base_boxes.size(0)))]
-    begin = torch.zeros(base_boxes.size(0))
-    end = torch.ones(base_boxes.size(0)) * 2
-    here = None
-    while iter_cnt > 0:
-        dist = (end + begin) / 2
-        here = base_boxes + (dir * dist.unsqueeze(1))
-        iou = one2one_jaccard(to_point_form(base_boxes), to_point_form(here))
-        error = iou - want_iou
-        pos = error.gt(0.000000001)
-        neg = pos != 1
-        begin[pos] = dist[pos]
-        end[neg] = dist[neg]
-        iter_cnt -= 1
-    ret = here
-
-    if perfect:
-        mask = ret[:, 2] < 0
-        mask += ret[:, 3] < 0
-        mask += (ret[:, 0:2] - ret[:, 2:4] / 2).lt(0).sum(1)
-        mask += (ret[:, 0:2] + ret[:, 2:4] / 2).gt(1).sum(1)
-        mask = mask.gt(0)
-        if mask.sum() > 0:
-            box_mask = mask.unsqueeze(1).expand(want_iou.size(0), 4)
-            ret[box_mask] = rand_gen_uniform(base_boxes[box_mask].view(-1, 4), want_iou[mask], perfect=True)
-    return ret
-
-
-# point form input
-def generate_adjacent_boxes_set_iou(base_boxes, want_iou, im_height, im_width):
-    assert base_boxes.size(0) == want_iou.size(0)
-    base_boxes = to_center_form(base_boxes)
-    base_boxes[:, 0] /= im_width
-    base_boxes[:, 1] /= im_height
-    base_boxes[:, 2] /= im_width
-    base_boxes[:, 3] /= im_height
-
-    ret = torch.zeros((base_boxes.size(0), 5))
-    here = rand_gen_uniform(base_boxes, want_iou)
-    here[:, 2:4].clamp_(min=0)
-    ret[:, 1:] = to_point_form(here)
-    ret[:, 1] = ret[:, 1].mul(im_width).clamp_(min=0, max=im_width - 1)
-    ret[:, 2] = ret[:, 2].mul(im_height).clamp_(min=0, max=im_height - 1)
-    ret[:, 3] = ret[:, 3].mul(im_width).clamp_(min=0, max=im_width - 1)
-    ret[:, 4] = ret[:, 4].mul(im_height).clamp_(min=0, max=im_height - 1)
-    return ret
-
+#
+# var = 1
+# pseudo_gaussian = np.random.multivariate_normal([0, 0, 0, 0], [[var, 0, 0, 0], [0, var, 0, 0], [0, 0, var, 0], [0, 0, 0, var]], 100000)
+# pseudo_gaussian = torch.from_numpy(pseudo_gaussian).float()
+# pseudo_gaussian /= torch.norm(pseudo_gaussian, 2, 1).unsqueeze(1)
+#
+#
+# # center form input
+# def rand_gen_uniform(base_boxes, want_iou, perfect=False, iter_cnt=20):
+#     dir = pseudo_gaussian[torch.from_numpy(np.random.choice(100000, base_boxes.size(0)))]
+#     begin = torch.zeros(base_boxes.size(0))
+#     end = torch.ones(base_boxes.size(0)) * 2
+#     here = None
+#     while iter_cnt > 0:
+#         dist = (end + begin) / 2
+#         here = base_boxes + (dir * dist.unsqueeze(1))
+#         iou = one2one_jaccard(to_point_form(base_boxes), to_point_form(here))
+#         error = iou - want_iou
+#         pos = error.gt(0.000000001)
+#         neg = pos != 1
+#         begin[pos] = dist[pos]
+#         end[neg] = dist[neg]
+#         iter_cnt -= 1
+#     ret = here
+#
+#     if perfect:
+#         mask = ret[:, 2] < 0
+#         mask += ret[:, 3] < 0
+#         mask += (ret[:, 0:2] - ret[:, 2:4] / 2).lt(0).sum(1)
+#         mask += (ret[:, 0:2] + ret[:, 2:4] / 2).gt(1).sum(1)
+#         mask = mask.gt(0)
+#         if mask.sum() > 0:
+#             box_mask = mask.unsqueeze(1).expand(want_iou.size(0), 4)
+#             ret[box_mask] = rand_gen_uniform(base_boxes[box_mask].view(-1, 4), want_iou[mask], perfect=True)
+#     return ret
+#
+#
+# # point form input
+# def generate_adjacent_boxes_set_iou(base_boxes, want_iou, im_height, im_width):
+#     assert base_boxes.size(0) == want_iou.size(0)
+#     base_boxes = to_center_form(base_boxes)
+#     base_boxes[:, 0] /= im_width
+#     base_boxes[:, 1] /= im_height
+#     base_boxes[:, 2] /= im_width
+#     base_boxes[:, 3] /= im_height
+#
+#     ret = torch.zeros((base_boxes.size(0), 5))
+#     here = rand_gen_uniform(base_boxes, want_iou)
+#     here[:, 2:4].clamp_(min=0)
+#     ret[:, 1:] = to_point_form(here)
+#     ret[:, 1] = ret[:, 1].mul(im_width).clamp_(min=0, max=im_width - 1)
+#     ret[:, 2] = ret[:, 2].mul(im_height).clamp_(min=0, max=im_height - 1)
+#     ret[:, 3] = ret[:, 3].mul(im_width).clamp_(min=0, max=im_width - 1)
+#     ret[:, 4] = ret[:, 4].mul(im_height).clamp_(min=0, max=im_height - 1)
+#     return ret
+#
 
 # def generate_adjacent_boxes(base_boxes, seed_boxes, im_height, im_width):
 #     base_boxes = to_center_form(base_boxes)

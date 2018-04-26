@@ -44,7 +44,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--epochs', dest='max_epochs',
                         help='number of epochs to train',
-                        default=20, type=int)
+                        default=15, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=1000, type=int)
@@ -181,17 +181,16 @@ if __name__ == '__main__':
 
     random_box_generator = UniformBoxGenerator(args.iou_th)
 
-    for epoch in range(args.start_epoch, args.max_epochs):
+    for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
         UBR.train()
         loss_temp = 0
         mean_boxes_per_iter = 0
         start = time.time()
 
-        if epoch % (args.lr_decay_step + 1) == 0:
+        if epoch % args.lr_decay_step == 1:
             adjust_learning_rate(optimizer, args.lr_decay_gamma)
             lr *= args.lr_decay_gamma
-
 
         data_iter = iter(dataloader)
         for step in range(len(dataset)):
@@ -218,7 +217,7 @@ if __name__ == '__main__':
             rois = torch.zeros((num_per_base * num_gt_box, 5))
             cnt = 0
             for i in range(num_gt_box):
-                here = random_box_generator.get_rand_boxes(gt_boxes[i:i+1, :], num_per_base, data_height, data_width)
+                here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
                 if here is None:
                     print('@@@@@ no box @@@@@')
                     continue
