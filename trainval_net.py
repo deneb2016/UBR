@@ -43,6 +43,10 @@ def parse_args():
 
     parser.add_argument('--save_dir', dest='save_dir',
                         help='directory to save models', default="../repo/ubr")
+    parser.add_argument('--save_interval', dest='save_interval',
+                        help='number of iterations to save',
+                        default=1, type=int)
+
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
                         default=0, type=int)
@@ -347,15 +351,16 @@ def train():
             adjust_learning_rate(optimizer, args.lr_decay_gamma)
             lr *= args.lr_decay_gamma
 
-        save_name = os.path.join(output_dir, '{}_{}_{}_{}.pth'.format(args.net, args.session, epoch, step))
-        save_checkpoint({
-            'net' : args.net,
-            'session': args.session,
-            'epoch': epoch + 1,
-            'model': UBR.state_dict(),
-            'optimizer': optimizer.state_dict()
-        }, save_name)
-        print('save model: {}'.format(save_name))
+        if epoch % save_name == 0:
+            save_name = os.path.join(output_dir, '{}_{}_{}_{}.pth'.format(args.net, args.session, epoch, step))
+            save_checkpoint({
+                'net' : args.net,
+                'session': args.session,
+                'epoch': epoch + 1,
+                'model': UBR.state_dict(),
+                'optimizer': optimizer.state_dict()
+            }, save_name)
+            print('save model: {}'.format(save_name))
 
     log_file.close()
 
