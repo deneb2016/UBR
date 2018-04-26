@@ -1,26 +1,18 @@
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
 import numpy as np
 import argparse
-import pprint
 import pdb
 import time
 
 import torch
 from torch.autograd import Variable
-import torch.nn as nn
-import torch.optim as optim
-
-import torchvision.transforms as transforms
 from torch.utils.data.sampler import Sampler
 
-from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
-    adjust_learning_rate, save_checkpoint, clip_gradient
+from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.utils.box_utils import inverse_transform, jaccard
@@ -37,8 +29,8 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='Train a Universal Object Box Regressor')
     parser.add_argument('--net', dest='net',
-                        help='vgg16',
-                        default='vgg16', type=str)
+                        help='UBR_VGG',
+                        default='UBR_VGG', type=str)
     parser.add_argument('--start_epoch', dest='start_epoch',
                         help='starting epoch',
                         default=1, type=int)
@@ -54,8 +46,12 @@ def parse_args():
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
                         default=0, type=int)
-    parser.add_argument('--anno', default = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json')
-    parser.add_argument('--images', default = './data/coco/images/train2017/')
+
+    parser.add_argument('--train_anno', default = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json')
+    parser.add_argument('--val_anno', default = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json')
+    parser.add_argument('--train_images', default = './data/coco/images/train2017/')
+    parser.add_argument('--val_images', default='./data/coco/images/val2017/')
+
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
                         action='store_true')
@@ -116,7 +112,59 @@ def draw_box(boxes, col=None):
         plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
 
 
-if __name__ == '__main__':
+def validate(model, random_box_generator, criterion, dataset, dataloader):
+    model.eval()
+    data_iter = iter(dataloader)
+    tot_loss = 0
+    tot_cnt = 0
+    for step in range(len(dataset)):
+        im_data, gt_boxes, _, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
+        raw_img = raw_img.squeeze().numpy()
+        gt_boxes = gt_boxes[0, :, :]
+        data_height = data_height[0]
+        data_width = data_width[0]
+        im_scale = im_scale[0]
+        im_id = im_id[0]
+        im_data = Variable(im_data.cuda())
+        num_gt_box = gt_boxes.size(0)
+
+        # generate random box from given gt box
+        # the shape of rois is (n, 5), the first column is not used
+        # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
+        num_per_base = 50
+        if num_gt_box > 4:
+            num_per_base = 200 // num_gt_box
+
+        rois = torch.zeros((num_per_base * num_gt_box, 5))
+        cnt = 0
+        for i in range(num_gt_box):
+            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
+            if here is None:
+                print('@@@@@ val no box @@@@@')
+                continue
+            rois[cnt:cnt + here.size(0), :] = here
+            cnt += here.size(0)
+        if cnt == 0:
+            continue
+        rois = rois[:cnt, :]
+        rois = Variable(rois.cuda())
+        gt_boxes = Variable(gt_boxes.cuda())
+
+        bbox_pred = model(im_data, rois)
+
+        loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+        if loss is None:
+            print('val zero mached')
+        else:
+            loss = loss.mean()
+            tot_loss += loss.data[0]
+            tot_cnt += 1
+
+    model.train()
+    return tot_loss / tot_cnt
+
+
+def train():
     args = parse_args()
 
     print('Called with args:')
@@ -126,23 +174,25 @@ if __name__ == '__main__':
     if torch.cuda.is_available() and not args.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-    output_dir = args.save_dir + "/" + args.net
+    output_dir = args.save_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = COCODataset(args.anno, args.images, training=True, multi_scale=args.multiscale)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
+    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
+    val_dataset = COCODataset(args.val_anno, args.val_images, training=True, multi_scale=args.multiscale)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
+
+    lr = args.lr
 
     # initilize the network here.
-    if args.net == 'vgg16':
+    if args.net == 'UBR_VGG':
         UBR = UBR_VGG(args.base_model_path)
     else:
         print("network is not defined")
         pdb.set_trace()
 
     UBR.create_architecture()
-
-    lr = args.lr
 
     params = []
     for key, value in dict(UBR.named_parameters()).items():
@@ -159,15 +209,21 @@ if __name__ == '__main__':
         optimizer = torch.optim.SGD(params, momentum=0.9)
 
     if args.resume:
-        load_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+        load_name = os.path.join(output_dir, '{}_{}_{}_{}.pth'.format(args.net, args.checksession, args.checkepoch, args.checkpoint))
         print("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
+        assert args.net == checkpoint['net']
         args.session = checkpoint['session']
         args.start_epoch = checkpoint['epoch']
         UBR.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr = optimizer.param_groups[0]['lr']
         print("loaded checkpoint %s" % (load_name))
+
+    log_file_name = os.path.join(output_dir, 'log_{}_{}.txt'.format(args.net, args.session))
+    log_file = open(log_file_name, 'w')
+    log_file.write(str(args))
+    log_file.write('\n')
 
     if args.cuda:
         UBR.cuda()
@@ -176,8 +232,6 @@ if __name__ == '__main__':
         criterion = UBR_SmoothL1Loss(args.iou_th)
     elif args.loss == 'iou':
         criterion = UBR_IoULoss(args.iou_th)
-    else:
-        raise 'invalid loss funtion'
 
     random_box_generator = UniformBoxGenerator(args.iou_th)
 
@@ -186,14 +240,11 @@ if __name__ == '__main__':
         UBR.train()
         loss_temp = 0
         mean_boxes_per_iter = 0
+        effective_iteration = 0
         start = time.time()
 
-        if epoch % args.lr_decay_step == 1:
-            adjust_learning_rate(optimizer, args.lr_decay_gamma)
-            lr *= args.lr_decay_gamma
-
-        data_iter = iter(dataloader)
-        for step in range(len(dataset)):
+        data_iter = iter(train_dataloader)
+        for step in range(1, len(train_dataset) + 1):
             im_data, gt_boxes, _, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
             raw_img = raw_img.squeeze().numpy()
             gt_boxes = gt_boxes[0, :, :]
@@ -212,24 +263,20 @@ if __name__ == '__main__':
             if num_gt_box > 4:
                 num_per_base = 200 // num_gt_box
 
-            # rand_base = gt_boxes.unsqueeze(0).expand(num_per_base, num_gt_box, 4).contiguous().view(num_per_base * num_gt_box, 4)
-            # rand = torch.from_numpy(np.random.uniform(args.iou_th, 0.999, rand_base.size(0))).float()
             rois = torch.zeros((num_per_base * num_gt_box, 5))
             cnt = 0
             for i in range(num_gt_box):
                 here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
                 if here is None:
-                    print('@@@@@ no box @@@@@')
                     continue
                 rois[cnt:cnt + here.size(0), :] = here
                 cnt += here.size(0)
             if cnt == 0:
+                log_file.write('@@@@ no box @@@@\n')
+                print('@@@@@ no box @@@@@')
                 continue
             rois = rois[:cnt, :]
             mean_boxes_per_iter += rois.size(0)
-            #print(rois.size(0))
-            #print(rois)
-            #rois = random_box_generator.get_rand_boxes(gt_boxes, num_per_base, data_height, data_width)
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
 
@@ -253,23 +300,37 @@ if __name__ == '__main__':
                 # backward
                 optimizer.zero_grad()
                 loss.backward()
-                if args.net == "vgg16":
+                if args.net == 'UBR_VGG':
                     clip_gradient(UBR, 10.)
                 optimizer.step()
+                effective_iteration += 1
 
             if step % args.disp_interval == 0:
                 end = time.time()
-                if step > 0:
-                    loss_temp /= args.disp_interval
-                    mean_boxes_per_iter /= args.disp_interval
+                loss_temp /= effective_iteration
+                mean_boxes_per_iter /= effective_iteration
 
-                print("[session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f, boxes: %.1f" % (args.session, epoch, step, loss_temp, lr, end - start, mean_boxes_per_iter))
+                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f, boxes: %.1f" %
+                      (args.net, args.session, epoch, step, loss_temp, lr, end - start, mean_boxes_per_iter))
+                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f, boxes: %.1f\n" %
+                               (args.net, args.session, epoch, step, loss_temp, lr, end - start, mean_boxes_per_iter))
                 loss_temp = 0
+                effective_iteration = 0
                 mean_boxes_per_iter = 0
                 start = time.time()
 
-        save_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.session, epoch, step))
+        val_loss = validate(UBR, random_box_generator, criterion, val_dataset, val_dataloader)
+        print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
+        log_file.write('[net %s][session %d][epoch %2d] validation loss: %.4f\n' % (args.net, args.session, epoch, val_loss))
+        log_file.flush()
+
+        if epoch % args.lr_decay_step == 0:
+            adjust_learning_rate(optimizer, args.lr_decay_gamma)
+            lr *= args.lr_decay_gamma
+
+        save_name = os.path.join(output_dir, '{}_{}_{}_{}.pth'.format(args.net, args.session, epoch, step))
         save_checkpoint({
+            'net' : args.net,
             'session': args.session,
             'epoch': epoch + 1,
             'model': UBR.state_dict(),
@@ -277,5 +338,8 @@ if __name__ == '__main__':
         }, save_name)
         print('save model: {}'.format(save_name))
 
-        end = time.time()
-        print(end - start)
+    log_file.close()
+
+
+if __name__ == '__main__':
+    train()
