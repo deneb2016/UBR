@@ -47,7 +47,7 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
-                        default=100, type=int)
+                        default=1000, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
                         help='directory to save models', default="../repo/ubr")
@@ -224,6 +224,8 @@ if __name__ == '__main__':
                     continue
                 rois[cnt:cnt + here.size(0), :] = here
                 cnt += here.size(0)
+            if cnt == 0:
+                continue
             rois = rois[:cnt, :]
             mean_boxes_per_iter += rois.size(0)
             #print(rois.size(0))
