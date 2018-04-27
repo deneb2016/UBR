@@ -368,6 +368,6 @@ class ClassificationAdversarialLoss1(nn.Module):
 
         mask = max_gt_idx[mask]
         mached_gt = gt_labels[mask].squeeze()
-        #print(class_pred, mached_gt)
+        print(class_pred, mached_gt)
         loss = F.cross_entropy(class_pred, mached_gt)
         return loss

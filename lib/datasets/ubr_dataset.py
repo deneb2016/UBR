@@ -41,6 +41,8 @@ class COCODataset(data.Dataset):
             self._id_to_index[id] = i
             self.num_classes = i + 1
 
+        print('%s classes detected' % self.num_classes)
+
         for i, img in enumerate(self._anno['images']):
             data = {}
             id = img['id']
