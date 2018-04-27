@@ -153,7 +153,8 @@ if __name__ == '__main__':
             continue
         rois = rois[:cnt, :]
         rois = rois.cuda()
-        bbox_pred = UBR(im_data, Variable(rois)).data
+        bbox_pred, _ = UBR(im_data, Variable(rois))
+        bbox_pred = bbox_pred.data
         refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
         refined_boxes[:, 0].clamp_(min=0, max=data_width - 1)
         refined_boxes[:, 1].clamp_(min=0, max=data_height - 1)

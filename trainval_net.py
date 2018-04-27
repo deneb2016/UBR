@@ -268,6 +268,7 @@ def train():
         for step in range(1, len(train_dataset) + 1):
             im_data, gt_boxes, gt_labels, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
             raw_img = raw_img.squeeze().numpy()
+            gt_labels = gt_labels[0, :]
             gt_boxes = gt_boxes[0, :, :]
             data_height = data_height[0]
             data_width = data_width[0]
@@ -323,6 +324,7 @@ def train():
 
             if args.cal and args.cal_start <= epoch:
                 cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
+                cal_loss *= args.alpha
                 if cal_loss is None:
                     cal_loss = Variable(torch.zeros(1).cuda())
                 loss = loss + cal_loss
@@ -340,6 +342,7 @@ def train():
                 end = time.time()
                 loss_temp /= effective_iteration
                 mean_boxes_per_iter /= effective_iteration
+                cal_loss_temp /= effective_iteration
 
                 print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, time: %f, boxes: %.1f" %
                       (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, end - start, mean_boxes_per_iter))

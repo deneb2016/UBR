@@ -359,15 +359,15 @@ class ClassificationAdversarialLoss1(nn.Module):
         mask = max_iou.gt(self._overlap_threshold)
         if mask.sum().data[0] == 0:
             return None
-        mask = mask.unsqueeze(1).expand(num_rois, self.num_classes)
-
-        class_pred = class_pred[mask].view(-1, self.num_classes)
+        #print(class_pred)
+        class_pred = class_pred[mask.unsqueeze(1).expand(num_rois, self.num_classes)].view(-1, self.num_classes)
         #print(class_pred, gt_categories)
 
-        mask = max_iou.gt(self._overlap_threshold)
-
-        mask = max_gt_idx[mask]
-        mached_gt = gt_labels[mask].squeeze()
-        print(class_pred, mached_gt)
+        indices = max_gt_idx[mask]
+        #print('indicies', indices)
+        #print('gt_labels', gt_labels)
+        mached_gt = gt_labels[indices]
+        #print('class_pred', class_pred)
+        #print('mached_gt', mached_gt)
         loss = F.cross_entropy(class_pred, mached_gt)
         return loss
