@@ -5,15 +5,18 @@ from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
 class UBR_VGG(nn.Module):
-    def __init__(self, base_model_path):
+    def __init__(self, base_model_path=None):
         super(UBR_VGG, self).__init__()
         self.model_path = base_model_path
 
     def _init_modules(self):
         vgg = models.vgg16()
-        print("Loading pretrained weights from %s" % (self.model_path))
-        state_dict = torch.load(self.model_path)
-        vgg.load_state_dict({k: v for k, v in state_dict.items() if k in vgg.state_dict()})
+        if self.model_path is None:
+            print("Create model without pretrained weights")
+        else:
+            print("Loading pretrained weights from %s" % (self.model_path))
+            state_dict = torch.load(self.model_path)
+            vgg.load_state_dict({k: v for k, v in state_dict.items() if k in vgg.state_dict()})
 
         vgg.classifier = nn.Sequential(*list(vgg.classifier._modules.values())[:-1])
 
@@ -30,7 +33,8 @@ class UBR_VGG(nn.Module):
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
-            """
+            """    parser.add_argument('--base_model_path', default='data/pretrained_model/vgg16_caffe.pth')
+
             weight initalizer: truncated normal and random normal.
             """
             # x is a parameter

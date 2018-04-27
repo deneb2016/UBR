@@ -57,9 +57,6 @@ def parse_args():
     parser.add_argument('--train_images', default = './data/coco/images/train2017/')
     parser.add_argument('--val_images', default='./data/coco/images/val2017/')
 
-    parser.add_argument('--cuda', dest='cuda',
-                        help='whether use CUDA',
-                        action='store_true')
     parser.add_argument('--multiscale', action = 'store_true')
 
     parser.add_argument('--iou_th', type=float, help='iou threshold to use for training')
@@ -96,9 +93,6 @@ def parse_args():
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load model',
                         default=1, type=int)
-    parser.add_argument('--checkpoint', dest='checkpoint',
-                        help='checkpoint to load model',
-                        default=0, type=int)
     parser.add_argument('--base_model_path', default = 'data/pretrained_model/vgg16_caffe.pth')
 
     args = parser.parse_args()
@@ -176,9 +170,6 @@ def train():
     print(args)
     np.random.seed(3)
 
-    if torch.cuda.is_available() and not args.cuda:
-        print("WARNING: You have a CUDA device, so you should probably run with --cuda")
-
     output_dir = args.save_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -232,7 +223,7 @@ def train():
         optimizer = torch.optim.SGD(params, momentum=0.9)
 
     if args.resume:
-        load_name = os.path.join(output_dir, '{}_{}_{}_{}.pth'.format(args.net, args.checksession, args.checkepoch, args.checkpoint))
+        load_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.checksession, args.checkepoch))
         print("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
         assert args.net == checkpoint['net']
@@ -248,8 +239,7 @@ def train():
     log_file.write(str(args))
     log_file.write('\n')
 
-    if args.cuda:
-        UBR.cuda()
+    UBR.cuda()
 
     if args.loss == 'smoothl1':
         criterion = UBR_SmoothL1Loss(args.iou_th)
@@ -352,7 +342,7 @@ def train():
             lr *= args.lr_decay_gamma
 
         if epoch % args.save_interval == 0:
-            save_name = os.path.join(output_dir, '{}_{}_{}_{}.pth'.format(args.net, args.session, epoch, step))
+            save_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.session, epoch))
             save_checkpoint({
                 'net' : args.net,
                 'session': args.session,

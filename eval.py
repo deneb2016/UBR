@@ -33,34 +33,20 @@ from lib.voc_data import VOCDetection
 import cv2
 import itertools
 
+
 def parse_args():
     """
     Parse input arguments
     """
     parser = argparse.ArgumentParser(description='Evaluate a Universal Object Box Regressor')
-    parser.add_argument('--net', dest='net',
-                        help='vgg16',
-                        default='vgg16', type=str)
 
     parser.add_argument('--save_dir', dest='save_dir',
-                        help='directory to save models', default="../repo/ubr")
+                        help='directory to save results', default="../repo/ubr")
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
                         default=0, type=int)
-    parser.add_argument('--cuda', dest='cuda',
-                        help='whether use CUDA',
-                        action='store_true')
 
-    parser.add_argument('--checksession', dest='checksession',
-                        help='checksession to load model',
-                        default=1, type=int)
-    parser.add_argument('--checkepoch', dest='checkepoch',
-                        help='checkepoch to load model',
-                        default=1, type=int)
-    parser.add_argument('--checkpoint', dest='checkpoint',
-                        help='checkpoint to load model',
-                        default=0, type=int)
-    parser.add_argument('--base_model_path', default='data/pretrained_model/vgg16_caffe.pth')
+    parser.add_argument('--model_path', type=str)
 
     args = parser.parse_args()
     return args
@@ -104,38 +90,39 @@ if __name__ == '__main__':
     print(args)
     np.random.seed(10)
 
-    if torch.cuda.is_available() and not args.cuda:
-        print("WARNING: You have a CUDA device, so you should probably run with --cuda")
-
-    output_dir = args.save_dir + "/" + args.net
+    output_dir = args.save_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
 
+    load_name = os.path.abspath(args.model_path)
+    print("loading checkpoint %s" % (load_name))
+    checkpoint = torch.load(load_name)
+
     # initilize the network here.
-    if args.net == 'vgg16':
-        UBR = UBR_VGG(args.base_model_path)
+    if checkpoint['net'] == 'UBR_VGG':
+        UBR = UBR_VGG()
     else:
         print("network is not defined")
         pdb.set_trace()
 
     UBR.create_architecture()
-
-    load_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
-    print("loading checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
     UBR.load_state_dict(checkpoint['model'])
     print("loaded checkpoint %s" % (load_name))
 
-    if args.cuda:
-        UBR.cuda()
+    output_file_name = os.path.join(output_dir, 'eval_{}_{}_{}.txt'.format(checkpoint['net'], checkpoint['session'], checkpoint['epoch'] - 1))
+    output_file = open(output_file_name, 'w')
+    output_file.write(str(args))
+    output_file.write('\n')
 
+    UBR.cuda()
     UBR.eval()
 
     random_box_generator = UniformIouBoxGenerator()
-    result = np.zeros((10, 10))
+    fixed_target_result = np.zeros((10, 10))
+    variable_target_result = np.zeros((10, 10))
 
     data_iter = iter(dataloader)
     tot_rois = 0
@@ -156,42 +143,76 @@ if __name__ == '__main__':
         for i in range(num_gt_box):
             here = random_box_generator.get_uniform_iou_boxes(gt_boxes[i, :], data_height, data_width)
             if here is None:
-                print('@@@@@ no box @@@@@')
                 continue
             rois[cnt:cnt + here.size(0), :] = here
             cnt += here.size(0)
+
+        if cnt == 0:
+            print('@@@@@ no box @@@@@', data_idx)
+            output_file.write('@@@@@ no box @@@@@ %d\n' % data_idx)
+            continue
         rois = rois[:cnt, :]
         rois = rois.cuda()
         bbox_pred = UBR(im_data, Variable(rois)).data
         refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
+        refined_boxes[:, 0].clamp_(min=0, max=data_width - 1)
+        refined_boxes[:, 1].clamp_(min=0, max=data_height - 1)
+        refined_boxes[:, 2].clamp_(min=0, max=data_width - 1)
+        refined_boxes[:, 3].clamp_(min=0, max=data_height - 1)
 
         gt_boxes = gt_boxes.cuda()
         base_iou = jaccard(rois[:, 1:], gt_boxes)
         refined_iou = jaccard(refined_boxes, gt_boxes)
         base_max_overlap, base_max_overlap_idx = base_iou.max(1)
         refined_max_overlap, refined_max_overlap_idx = refined_iou.max(1)
-        plt.imshow(raw_img)
-        draw_box(rois[:, 1:] / im_scale)
-        draw_box(refined_boxes / im_scale, 'yellow')
-        draw_box(gt_boxes / im_scale, 'black')
-        plt.show()
-        for i in range(10):
-            for target_th in range(10):
-                mask1 = base_max_overlap.gt(i / 10) * base_max_overlap.le(i / 10 + 0.1)
-                after_iou = refined_iou[range(refined_iou.size(0)), base_max_overlap_idx]
-                mask2 = after_iou.gt(target_th / 10) * after_iou.le((target_th + 1) / 10)
-                result[i, target_th] += (mask1 * mask2).sum()
+        # plt.imshow(raw_img)
+        # draw_box(rois[:10, 1:] / im_scale)
+        # draw_box(refined_boxes[:10, :] / im_scale, 'yellow')
+        # draw_box(gt_boxes / im_scale, 'black')
+        # plt.show()
+        for from_th in range(10):
+            mask1 = base_max_overlap.gt(from_th * 0.1) * base_max_overlap.le(from_th * 0.1 + 0.1)
+            after_iou = refined_iou[range(refined_iou.size(0)), base_max_overlap_idx]
+            for to_th in range(10):
+                mask2 = after_iou.gt(to_th * 0.1) * after_iou.le(to_th * 0.1 + 0.1)
+                mask3 = refined_max_overlap.gt(to_th * 0.1) * refined_max_overlap.le(to_th * 0.1 + 0.1)
+                fixed_target_result[from_th, to_th] += (mask1 * mask2).sum()
+                variable_target_result[from_th, to_th] += (mask1 * mask3).sum()
         if data_idx % 100 == 0:
             print(data_idx)
+    output_file.write('@@@@@fixed target result@@@@@\n')
+    for i, j in itertools.product(range(10), range(10)):
+        if j == 0:
+            output_file.write('\n')
+        output_file.write('%.4f\t' % fixed_target_result[i, j])
+
+    output_file.write('\n')
 
     for i, j in itertools.product(range(10), range(10)):
         if j == 0:
-            print('')
-        print('%.4f\t' % result[i, j], end='')
-    print('')
+            output_file.write('\n')
+        if fixed_target_result[i, :].sum() == 0:
+            output_file.write('   0\t')
+        else:
+            output_file.write('%.4f\t' % (float(fixed_target_result[i, j]) / float(fixed_target_result[i, :].sum())))
+    output_file.write('\n')
+
+    output_file.write('@@@@@variable target result@@@@@\n')
+    for i, j in itertools.product(range(10), range(10)):
+        if j == 0:
+            output_file.write('\n')
+
+        output_file.write('%.4f\t' % variable_target_result[i, j])
+
+    output_file.write('\n')
 
     for i, j in itertools.product(range(10), range(10)):
         if j == 0:
-            print('')
-        print('%.4f\t' % result[i, j] / result[i, :].sum(), end='')
-    print('')
+            output_file.write('\n')
+        if variable_target_result[i, :].sum() == 0:
+            output_file.write('   0\t')
+        else:
+            output_file.write('%.4f\t' % (float(variable_target_result[i, j]) / float(variable_target_result[i, :].sum())))
+    output_file.write('\n')
+
+    output_file.close()
