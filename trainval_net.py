@@ -300,7 +300,8 @@ def train():
             mean_boxes_per_iter += rois.size(0)
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
-
+            gt_labels = Variable(gt_labels.cuda())
+            
             bbox_pred, shared_feat = UBR(im_data, rois)
 
 
