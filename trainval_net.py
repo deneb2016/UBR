@@ -18,7 +18,7 @@ from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.utils.box_utils import inverse_transform, jaccard
 from lib.model.utils.rand_box_generator import UniformBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
-from lib.model.ubr.ubr_loss import UBR_IoULoss
+from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
 
@@ -63,6 +63,11 @@ def parse_args():
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
 
+    parser.add_argument('--cal', help='use class adversarial  or net', action='store_true')
+
+    parser.add_argument('--alpha', type=float, help='alpha for class adversarial loss', default=0.0)
+
+    parser.add_argument('--cal_start', type=int, help='cal start epoch', default=1)
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -86,7 +91,7 @@ def parse_args():
     # resume trained model
     parser.add_argument('--r', dest='resume',
                         help='resume checkpoint or not',
-                        default=False, type=bool)
+                        action='store_true')
     parser.add_argument('--checksession', dest='checksession',
                         help='checksession to load model',
                         default=1, type=int)
@@ -190,8 +195,6 @@ def train():
         print('@@@@@no dataset@@@@@')
         return
 
-
-
     train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
     val_dataset = COCODataset(args.val_anno, args.val_images, training=True, multi_scale=args.multiscale)
@@ -246,19 +249,23 @@ def train():
     elif args.loss == 'iou':
         criterion = UBR_IoULoss(args.iou_th)
 
+    if args.cal:
+        cal_layer = ClassificationAdversarialLoss1(args.iou_th, train_dataset.num_classes)
+
     random_box_generator = UniformBoxGenerator(args.iou_th)
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
         UBR.train()
         loss_temp = 0
+        cal_loss_temp = 0
         mean_boxes_per_iter = 0
         effective_iteration = 0
         start = time.time()
 
         data_iter = iter(train_dataloader)
         for step in range(1, len(train_dataset) + 1):
-            im_data, gt_boxes, _, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
+            im_data, gt_boxes, gt_labels, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
             raw_img = raw_img.squeeze().numpy()
             gt_boxes = gt_boxes[0, :, :]
             data_height = data_height[0]
@@ -293,41 +300,51 @@ def train():
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
 
-            bbox_pred = UBR(im_data, rois)
+            bbox_pred, shared_feat = UBR(im_data, rois)
 
 
-            refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
+            #refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
             # plt.imshow(raw_img)
             # draw_box(rois[:, 1:].data / im_scale)
             #draw_box(refined_boxes / im_scale, 'yellow')
             # draw_box(gt_boxes.data / im_scale, 'black')
             # plt.show()
             loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+
             if loss is None:
                 loss_temp = 1000000
+                loss = Variable(torch.zeros(1).cuda())
                 print('zero mached')
-            else:
-                loss = loss.mean()
-                loss_temp += loss.data[0]
 
-                # backward
-                optimizer.zero_grad()
-                loss.backward()
-                if args.net == 'UBR_VGG':
-                    clip_gradient(UBR, 10.)
-                optimizer.step()
-                effective_iteration += 1
+            loss = loss.mean()
+            loss_temp += loss.data[0]
+
+            if args.cal and args.cal_start <= epoch:
+                cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
+                if cal_loss is None:
+                    cal_loss = Variable(torch.zeros(1).cuda())
+                loss = loss + cal_loss
+                cal_loss_temp += cal_loss.data[0]
+
+            # backward
+            optimizer.zero_grad()
+            loss.backward()
+            if args.net == 'UBR_VGG':
+                clip_gradient(UBR, 10.)
+            optimizer.step()
+            effective_iteration += 1
 
             if step % args.disp_interval == 0:
                 end = time.time()
                 loss_temp /= effective_iteration
                 mean_boxes_per_iter /= effective_iteration
 
-                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f, boxes: %.1f" %
-                      (args.net, args.session, epoch, step, loss_temp, lr, end - start, mean_boxes_per_iter))
-                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, time: %f, boxes: %.1f\n" %
-                               (args.net, args.session, epoch, step, loss_temp, lr, end - start, mean_boxes_per_iter))
+                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, time: %f, boxes: %.1f" %
+                      (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, end - start, mean_boxes_per_iter))
+                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, time: %f, boxes: %.1f\n" %
+                               (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, end - start, mean_boxes_per_iter))
                 loss_temp = 0
+                cal_loss_temp = 0
                 effective_iteration = 0
                 mean_boxes_per_iter = 0
                 start = time.time()

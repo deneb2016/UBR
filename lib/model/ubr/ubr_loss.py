@@ -8,6 +8,7 @@ import torchvision.models as models
 from torch.autograd import Variable
 import numpy as np
 from lib.model.utils.box_utils import *
+from torch.autograd.function import Function
 
 
 class UBR_SmoothL1Loss(nn.Module):
@@ -319,3 +320,54 @@ class UBR_ObjectnessLoss(nn.Module):
 
         loss = F.binary_cross_entropy(objectness_pred, target)
         return loss, target.sum().data[0], num_rois
+
+
+class GradientReversalLayer(Function):
+    @staticmethod
+    def forward(ctx, input):
+        return input.clone()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return -grad_output
+
+
+class ClassificationAdversarialLoss1(nn.Module):
+    def __init__(self, overlap_threshold, num_classes):
+        super(ClassificationAdversarialLoss1, self).__init__()
+        self._overlap_threshold = overlap_threshold
+        self.classifier = nn.Linear(4096, num_classes)
+        self.num_classes = num_classes
+
+    def _init_weights(self):
+        def normal_init(m, mean, stddev, truncated=False):
+            if truncated:
+                m.weight.data.normal_().fmod_(2).mul_(stddev).add_(mean) # not a perfect approximation
+            else:
+                m.weight.data.normal_(mean, stddev)
+                m.bias.data.zero_()
+
+        normal_init(self.classifier, 0, 0.001, False)
+
+    def forward(self, rois, gt_box, shared_feat, gt_labels):
+        shared_feat = GradientReversalLayer.apply(shared_feat)
+        class_pred = self.classifier(shared_feat)
+        num_rois = rois.size(0)
+        iou = jaccard(rois, gt_box)
+        #print(iou)
+        max_iou, max_gt_idx = torch.max(iou, 1)
+        mask = max_iou.gt(self._overlap_threshold)
+        if mask.sum() == 0:
+            return None
+        mask = mask.unsqueeze(1).expand(num_rois, self.num_classes)
+
+        class_pred = class_pred[mask].view(-1, self.num_classes)
+        #print(class_pred, gt_categories)
+
+        mask = max_iou.gt(self._overlap_threshold)
+
+        mask = max_gt_idx[mask]
+        mached_gt = gt_labels[mask].squeeze()
+        #print(class_pred, mached_gt)
+        loss = F.cross_entropy(class_pred, mached_gt)
+        return loss

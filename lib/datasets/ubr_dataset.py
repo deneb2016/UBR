@@ -19,6 +19,7 @@ class COCODataset(data.Dataset):
         self.training = training
         self.multi_scale = multi_scale
         self._id_to_index = {}
+
         crowd_img = {}
         for i, obj in enumerate(self._anno['annotations']):
             im_id = obj['image_id']
@@ -38,6 +39,7 @@ class COCODataset(data.Dataset):
 
         for i, id in enumerate(self._id_to_index):
             self._id_to_index[id] = i
+            self.num_classes = i + 1
 
         for i, img in enumerate(self._anno['images']):
             data = {}
