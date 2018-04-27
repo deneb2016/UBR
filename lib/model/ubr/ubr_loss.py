@@ -358,7 +358,7 @@ class ClassificationAdversarialLoss1(nn.Module):
         max_iou, max_gt_idx = torch.max(iou, 1)
         mask = max_iou.gt(self._overlap_threshold)
         print(mask)
-        if mask.sum() == 0:
+        if mask.sum().data[0] == 0:
             return None
         mask = mask.unsqueeze(1).expand(num_rois, self.num_classes)
 
