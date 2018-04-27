@@ -972,7 +972,3 @@
 #             cy.append(dy)
 #             dy += step
 #         dx += step
-
-import os
-
-os.system('CUDA_VISIBLE_DEVICES=1 python eval.py --model_path ../repo/ubr/UBR_VGG_10000001_12.pth')

@@ -154,7 +154,7 @@ def validate(model, random_box_generator, criterion, dataset, dataloader):
         rois = Variable(rois.cuda())
         gt_boxes = Variable(gt_boxes.cuda())
 
-        bbox_pred = model(im_data, rois)
+        bbox_pred, _ = model(im_data, rois)
 
         loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
         if loss is None:

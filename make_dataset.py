@@ -64,12 +64,12 @@ def select_random_images(image_set, object_set, num_images, num_objects):
     return image_set, tmp_obj_set
 
 
-NUM_IMAGES = 1000
-NUM_BOXES = 2000
+NUM_IMAGES = 3801
+NUM_BOXES = 12484
 np.random.seed(1085)
 anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_val2017.json'))
 
-want_classes = [line.rstrip() for line in open('voc_categories.txt')]
+want_classes = [line.rstrip() for line in open('coco60_categories.txt')]
 include_categories = []
 obj_cnt = [0 for i in range(100)]
 for i in range(91):
@@ -104,4 +104,4 @@ new_anno['images'] = image_set
 new_anno['categories'] = new_categories
 new_anno['annotations'] = object_set
 print(len(new_anno['images']), len(new_anno['annotations']))
-json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/instances_val2017_voc20classes_1000_2000.json', 'w'))
+json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/instances_val2017_coco60classes_%d_%d.json' % (NUM_IMAGES, NUM_BOXES), 'w'))
