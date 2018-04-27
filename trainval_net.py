@@ -251,6 +251,7 @@ def train():
 
     if args.cal:
         cal_layer = ClassificationAdversarialLoss1(args.iou_th, train_dataset.num_classes)
+        cal_layer.cuda()
 
     random_box_generator = UniformBoxGenerator(args.iou_th)
 
