@@ -54,6 +54,7 @@ def parse_args():
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--train_anno', default = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json')
     parser.add_argument('--val_anno', default = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json')
+    parser.add_argument('--tval_anno', type=str, default='./data/coco/annotations/instances_val2017_voc20classes_1000_2000.json')
     parser.add_argument('--train_images', default = './data/coco/images/train2017/')
     parser.add_argument('--val_images', default='./data/coco/images/val2017/')
 
@@ -191,14 +192,22 @@ def train():
     elif args.dataset == 'voc20_10000_20000':
         args.train_anno = './data/coco/annotations/instances_train2017_voc20classes_10000_20000.json'
         args.val_anno = './data/coco/annotations/instances_val2017_voc20classes_1000_2000.json'
+    elif args.dataset == 'coco_max':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco60classes_90577_294383.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_3801_12484.json'
+    elif args.dataset == 'coco_original':
+        args.train_anno = './data/coco/annotations/instances_train2014_subtract_voc.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_3801_12484.json'
     else:
         print('@@@@@no dataset@@@@@')
         return
 
     train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
-    val_dataset = COCODataset(args.val_anno, args.val_images, training=True, multi_scale=args.multiscale)
+    val_dataset = COCODataset(args.val_anno, args.val_images, training=False, multi_scale=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
+    tval_dataset = COCODataset(args.tval_anno, args.val_images, training=False, multi_scale=False)
+    tval_dataloader = torch.utils.data.DataLoader(tval_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
 
     lr = args.lr
 
@@ -324,6 +333,7 @@ def train():
 
             if args.cal and args.cal_start <= epoch:
                 cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
+                args.alpha = loss.data / cal_loss.data
                 cal_loss *= args.alpha
                 if cal_loss is None:
                     cal_loss = Variable(torch.zeros(1).cuda())
@@ -344,10 +354,10 @@ def train():
                 mean_boxes_per_iter /= effective_iteration
                 cal_loss_temp /= effective_iteration
 
-                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, time: %f, boxes: %.1f" %
-                      (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, end - start, mean_boxes_per_iter))
-                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, time: %f, boxes: %.1f\n" %
-                               (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, end - start, mean_boxes_per_iter))
+                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f" %
+                      (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, args.alpha, end - start, mean_boxes_per_iter))
+                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f\n" %
+                               (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, args.alpha, end - start, mean_boxes_per_iter))
                 loss_temp = 0
                 cal_loss_temp = 0
                 effective_iteration = 0
@@ -355,8 +365,12 @@ def train():
                 start = time.time()
 
         val_loss = validate(UBR, random_box_generator, criterion, val_dataset, val_dataloader)
+        tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset, tval_dataloader)
         print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
         log_file.write('[net %s][session %d][epoch %2d] validation loss: %.4f\n' % (args.net, args.session, epoch, val_loss))
+        print('[net %s][session %d][epoch %2d] transfer validation loss: %.4f' % (args.net, args.session, epoch, tval_loss))
+        log_file.write('[net %s][session %d][epoch %2d] transfer validation loss: %.4f\n' % (args.net, args.session, epoch, tval_loss))
+
         log_file.flush()
 
         if epoch % args.lr_decay_step == 0:

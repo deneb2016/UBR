@@ -879,24 +879,22 @@
 # draw_box(base_boxes, 'black')
 # plt.show()
 # #
-# import torch
-# from lib.model.utils.box_utils import jaccard, to_point_form, to_center_form
-# from matplotlib import pyplot as plt
-# from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator
-# import numpy as np
-#
-# generator = UniformIouBoxGenerator()
-# import time
-# base_box = torch.FloatTensor([100, 100, 200,200])
-# st = time.time()
-# for i in range(1000):
-#     boxes = generator.get_uniform_iou_boxes(base_box, 303, 303)
-# print(time.time() - st)
-# print(boxes.size(0))
-# iou = jaccard(base_box.unsqueeze(0), boxes[:, 1:])
-# print(iou)
-# for th in range(0, 10):
-#     print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())
+import torch
+from lib.model.utils.box_utils import jaccard, to_point_form, to_center_form
+from matplotlib import pyplot as plt
+from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator
+import numpy as np
+
+generator = UniformBoxGenerator(0.3)
+#generator = NaturalBoxGenerator(0.3)
+import time
+base_box = torch.FloatTensor([100, 100, 200,200])
+boxes = generator.get_rand_boxes(base_box, 1000, 303, 303)
+print(boxes.size(0))
+iou = jaccard(base_box.unsqueeze(0), boxes[:, 1:])
+print(iou)
+for th in range(0, 10):
+    print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())
 #
 # import queue
 # from nltk.corpus import wordnet as wn
