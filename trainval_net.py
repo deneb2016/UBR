@@ -333,7 +333,7 @@ def train():
 
             if args.cal and args.cal_start <= epoch:
                 cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
-                args.alpha = loss.data / cal_loss.data
+                args.alpha = loss.data[0] / cal_loss.data[0]
                 cal_loss *= args.alpha
                 if cal_loss is None:
                     cal_loss = Variable(torch.zeros(1).cuda())
