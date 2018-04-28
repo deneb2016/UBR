@@ -33,8 +33,8 @@ def preprocess(im, rois):
 
 
 class UBRWrapper:
-    def __init__(self, model_path, base_model_path):
-        self.UBR = UBR_VGG(base_model_path)
+    def __init__(self, model_path):
+        self.UBR = UBR_VGG()
         self.UBR.create_architecture()
         print("loading checkpoint %s" % (model_path))
         checkpoint = torch.load(model_path)
@@ -63,3 +63,5 @@ class UBRWrapper:
         ret[:, 3] = refined_boxes[:, 3].clamp(min=0, max=raw_img.shape[0] - 1)
 
         return ret
+
+
