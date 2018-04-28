@@ -269,6 +269,7 @@ def train():
         UBR.train()
         loss_temp = 0
         cal_loss_temp = 0
+        alpha_temp = 0
         mean_boxes_per_iter = 0
         effective_iteration = 0
         start = time.time()
@@ -333,8 +334,9 @@ def train():
 
             if args.cal and args.cal_start <= epoch:
                 cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
-                args.alpha = loss.data[0] / cal_loss.data[0]
-                cal_loss *= args.alpha
+                effective_alpha = (loss.data[0] / cal_loss.data[0]) * args.alpha
+                alpha_temp += effective_alpha
+                cal_loss *= effective_alpha
                 if cal_loss is None:
                     cal_loss = Variable(torch.zeros(1).cuda())
                 loss = loss + cal_loss
@@ -353,13 +355,15 @@ def train():
                 loss_temp /= effective_iteration
                 mean_boxes_per_iter /= effective_iteration
                 cal_loss_temp /= effective_iteration
+                alpha_temp /= effective_iteration
 
                 print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f" %
-                      (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, args.alpha, end - start, mean_boxes_per_iter))
+                      (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
                 log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f\n" %
-                               (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, args.alpha, end - start, mean_boxes_per_iter))
+                               (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
                 loss_temp = 0
                 cal_loss_temp = 0
+                alpha_temp = 0
                 effective_iteration = 0
                 mean_boxes_per_iter = 0
                 start = time.time()
