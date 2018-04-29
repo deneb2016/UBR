@@ -183,7 +183,7 @@ def train():
     print(args)
     np.random.seed(3)
     torch.manual_seed(2016)
-    torch.cuda.manual_seed(1085)
+    torch.cuda.manual_seed_all(1085)
 
     output_dir = args.save_dir
     if not os.path.exists(output_dir):
