@@ -5,9 +5,10 @@ from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
 class UBR_VGG(nn.Module):
-    def __init__(self, base_model_path=None):
+    def __init__(self, base_model_path=None, pretrained_fc=True):
         super(UBR_VGG, self).__init__()
         self.model_path = base_model_path
+        self.use_pretrained_fc = pretrained_fc
 
     def _init_modules(self):
         vgg = models.vgg16()
@@ -27,7 +28,17 @@ class UBR_VGG(nn.Module):
         for layer in range(10):
             for p in self.base[layer].parameters(): p.requires_grad = False
 
-        self.top = vgg.classifier
+        if self.use_pretrained_fc:
+            self.top = vgg.classifier
+        else:
+            self.top = nn.Sequential(
+                nn.Linear(512 * 7 * 7, 4096),
+                nn.ReLU(True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(True),
+                nn.Dropout()
+            )
         self.bbox_pred_layer = nn.Linear(4096, 4)
         self.roi_align = RoIAlignAvg(7, 7, 1.0/16.0)
 
@@ -45,6 +56,10 @@ class UBR_VGG(nn.Module):
                 m.bias.data.zero_()
 
         normal_init(self.bbox_pred_layer, 0, 0.001, False)
+        if not self.use_pretrained_fc:
+            for layer in self.top:
+                if hasattr(layer, 'weight'):
+                    normal_init(layer, 0, 0.001, False)
 
     def create_architecture(self):
         self._init_modules()
