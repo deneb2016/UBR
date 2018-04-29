@@ -370,4 +370,11 @@ class ClassificationAdversarialLoss1(nn.Module):
         #print('class_pred', class_pred)
         #print('mached_gt', mached_gt)
         loss = F.cross_entropy(class_pred, mached_gt)
+
+        if loss.data[0] < 0.001:
+            print(rois)
+            print(gt_box)
+            print(gt_labels)
+            print(class_pred)
+            print(mached_gt)
         return loss
