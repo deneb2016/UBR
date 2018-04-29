@@ -21,7 +21,7 @@ from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
-
+import random
 
 def parse_args():
     """
@@ -183,7 +183,8 @@ def train():
     print(args)
     np.random.seed(3)
     torch.manual_seed(2016)
-    torch.cuda.manual_seed_all(1085)
+    torch.cuda.manual_seed(1085)
+
 
     output_dir = args.save_dir
     if not os.path.exists(output_dir):
@@ -283,7 +284,6 @@ def train():
         random_box_generator = UniformBoxGenerator(args.iou_th)
     elif args.rand == 'uniform_iou':
         random_box_generator = UniformIouBoxGenerator(int(args.iou_th * 100), 95)
-
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
