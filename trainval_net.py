@@ -182,6 +182,7 @@ def train():
     print('Called with args:')
     print(args)
     np.random.seed(3)
+    torch.manual_seed(2016)
 
     output_dir = args.save_dir
     if not os.path.exists(output_dir):
