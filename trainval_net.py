@@ -75,6 +75,8 @@ def parse_args():
 
     parser.add_argument('--cal_start', type=int, help='cal start epoch', default=1)
 
+    parser.add_argument('--fc', help='do not use pretrained fc', action='store--ioyu_true')
+
 
 
     # config optimization
@@ -223,7 +225,7 @@ def train():
 
     # initilize the network here.
     if args.net == 'UBR_VGG':
-        UBR = UBR_VGG(args.base_model_path)
+        UBR = UBR_VGG(args.base_model_path, not args.fc)
     else:
         print("network is not defined")
         pdb.set_trace()
