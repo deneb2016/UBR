@@ -16,7 +16,7 @@ from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, cli
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.utils.box_utils import inverse_transform, jaccard
-from lib.model.utils.rand_box_generator import UniformBoxGenerator
+from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
 from lib.datasets.ubr_dataset import COCODataset
@@ -64,11 +64,18 @@ def parse_args():
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
 
+    parser.add_argument('--rand', type=str, default='uniform_box', help='uniform_box or natural_box or uniform_iou')
+
     parser.add_argument('--cal', help='use class adversarial  or net', action='store_true')
 
     parser.add_argument('--alpha', type=float, help='alpha for class adversarial loss', default=0.0)
+    # resume trained model
+    parser.add_argument('--static_alpha',
+                        action='store_true')
 
     parser.add_argument('--cal_start', type=int, help='cal start epoch', default=1)
+
+
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -228,6 +235,18 @@ def train():
             else:
                 params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
 
+    if args.cal:
+        cal_layer = ClassificationAdversarialLoss1(args.iou_th, train_dataset.num_classes)
+
+        for key, value in dict(cal_layer.named_parameters()).items():
+            if value.requires_grad:
+                if 'bias' in key:
+                    params += [{'params': [value], 'lr': lr * 2, 'weight_decay': 0}]
+                else:
+                    params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
+
+        cal_layer.cuda()
+
     if args.optimizer == "adam":
         lr = lr * 0.1
         optimizer = torch.optim.Adam(params)
@@ -239,9 +258,9 @@ def train():
         print("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
         assert args.net == checkpoint['net']
-        args.session = checkpoint['session']
         args.start_epoch = checkpoint['epoch']
         UBR.load_state_dict(checkpoint['model'])
+        print(checkpoint['optimizer'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr = optimizer.param_groups[0]['lr']
         print("loaded checkpoint %s" % (load_name))
@@ -258,11 +277,11 @@ def train():
     elif args.loss == 'iou':
         criterion = UBR_IoULoss(args.iou_th)
 
-    if args.cal:
-        cal_layer = ClassificationAdversarialLoss1(args.iou_th, train_dataset.num_classes)
-        cal_layer.cuda()
+    if args.rand == 'uniform_box':
+        random_box_generator = UniformBoxGenerator(args.iou_th)
+    elif args.rand == 'uniform_iou':
+        random_box_generator = UniformIouBoxGenerator(int(args.iou_th * 100), 95)
 
-    random_box_generator = UniformBoxGenerator(args.iou_th)
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
@@ -334,7 +353,10 @@ def train():
 
             if args.cal and args.cal_start <= epoch:
                 cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
-                effective_alpha = (loss.data[0] / cal_loss.data[0]) * args.alpha
+                if args.static_alpha:
+                    effective_alpha = args.alpha
+                else:
+                    effective_alpha = (loss.data[0] / cal_loss.data[0]) * args.alpha
                 alpha_temp += effective_alpha
                 cal_loss *= effective_alpha
                 if cal_loss is None:

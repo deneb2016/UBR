@@ -47,10 +47,8 @@ class COCODataset(data.Dataset):
             data = {}
             id = img['id']
             if id not in self._object_set or len(self._object_set[id]) == 0:
-                print('not object')
                 continue
             if id in crowd_img:
-                print('crowd image')
                 continue
             data['id'] = id
             data['object_set'] = np.array(self._object_set[id])

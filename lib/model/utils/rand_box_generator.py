@@ -127,12 +127,14 @@ class NaturalBoxGenerator:
 
 
 class UniformIouBoxGenerator:
-    def __init__(self, seed_pool_size_per_bag=10000):
+    def __init__(self, iou_begin=10, iou_end=100, seed_pool_size_per_bag=10000):
         print('Initialize UniformIouBoxGenerator...')
         self._seed_pool_size_per_bag = seed_pool_size_per_bag
         self._delta = torch.zeros((100, seed_pool_size_per_bag, 4))
+        self.iou_begin = iou_begin
+        self.iou_end = iou_end
 
-        for idx in range(10, 100):
+        for idx in range(iou_begin, iou_end):
             cnt = 0
             iou_th = idx / 100
             while cnt < seed_pool_size_per_bag:
@@ -159,13 +161,13 @@ class UniformIouBoxGenerator:
 
         print('Complete')
 
-    def get_uniform_iou_boxes(self, base_box, im_height, im_width):
+    def get_rand_boxes(self, base_box, num_gen, im_height, im_width):
         assert list(base_box.size()) == [4]
         base_box = to_center_form(base_box.unsqueeze(0)).squeeze()
 
-        ret = torch.zeros(100, 5)
+        ret = torch.zeros(self.iou_end - self.iou_begin, 5)
         cnt = 0
-        for idx in range(10, 100):
+        for idx in range(self.iou_begin, self.iou_end):
             selected_indices = torch.LongTensor(np.random.choice(self._seed_pool_size_per_bag, 100, replace=False))
             dx = self._delta[idx, :, 0][selected_indices]
             dy = self._delta[idx, :, 1][selected_indices]
@@ -189,6 +191,8 @@ class UniformIouBoxGenerator:
             ret[cnt, 1:] = gen_boxes[0, :]
             cnt += 1
 
-        ret = ret[:min(cnt, ret.size(0)), :]
+        selected_indices = torch.LongTensor(np.random.choice(cnt, min(cnt, num_gen), replace=False))
+        ret = ret[selected_indices]
+
         return ret
 
