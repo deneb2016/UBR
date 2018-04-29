@@ -75,7 +75,7 @@ def parse_args():
 
     parser.add_argument('--cal_start', type=int, help='cal start epoch', default=1)
 
-    parser.add_argument('--fc', help='do not use pretrained fc', action='store--ioyu_true')
+    parser.add_argument('--fc', help='do not use pretrained fc', action='store_true')
 
 
 
