@@ -5,10 +5,11 @@ from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
 class UBR_VGG(nn.Module):
-    def __init__(self, base_model_path=None, pretrained_fc=True):
+    def __init__(self, base_model_path=None, pretrained_fc=True, freeze_before_conv3=True):
         super(UBR_VGG, self).__init__()
         self.model_path = base_model_path
         self.use_pretrained_fc = pretrained_fc
+        self.freeze_before_conv3 = freeze_before_conv3
 
     def _init_modules(self):
         vgg = models.vgg16()
@@ -25,8 +26,9 @@ class UBR_VGG(nn.Module):
         self.base = nn.Sequential(*list(vgg.features._modules.values())[:-1])
 
         # Fix the layers before conv3:
-        for layer in range(10):
-            for p in self.base[layer].parameters(): p.requires_grad = False
+        if self.freeze_before_conv3:
+            for layer in range(10):
+                for p in self.base[layer].parameters(): p.requires_grad = False
 
         if self.use_pretrained_fc:
             self.top = vgg.classifier

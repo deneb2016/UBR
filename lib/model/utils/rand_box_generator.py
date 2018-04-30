@@ -95,7 +95,7 @@ class NaturalBoxGenerator:
             self._delta[cnt:cnt + new_cnt, 3] = dh[:new_cnt]
             cnt += new_cnt
 
-        print('init UniformBoxGenerator')
+        print('init NaturalBoxGenerator')
 
     def get_rand_boxes(self, base_box, num_gen, im_height, im_width):
         assert list(base_box.size()) == [4]

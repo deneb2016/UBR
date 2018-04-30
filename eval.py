@@ -141,7 +141,7 @@ if __name__ == '__main__':
         rois = torch.zeros((num_gt_box * 90, 5))
         cnt = 0
         for i in range(num_gt_box):
-            here = random_box_generator.get_uniform_iou_boxes(gt_boxes[i, :], data_height, data_width)
+            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], 90, data_height, data_width)
             if here is None:
                 continue
             rois[cnt:cnt + here.size(0), :] = here

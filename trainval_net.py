@@ -15,8 +15,12 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
+from lib.model.ubr.ubr_c4 import UBR_C4
+from lib.model.ubr.ubr_c3 import UBR_C3
+
+
 from lib.model.utils.box_utils import inverse_transform, jaccard
-from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator
+from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
 from lib.datasets.ubr_dataset import COCODataset
@@ -77,7 +81,7 @@ def parse_args():
 
     parser.add_argument('--fc', help='do not use pretrained fc', action='store_true')
 
-
+    parser.add_argument('--not_freeze', help='do not freeze before conv3', action='store_true')
 
     # config optimization
     parser.add_argument('--o', dest='optimizer',
@@ -187,7 +191,6 @@ def train():
     torch.manual_seed(2016)
     torch.cuda.manual_seed(1085)
 
-
     output_dir = args.save_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -225,7 +228,11 @@ def train():
 
     # initilize the network here.
     if args.net == 'UBR_VGG':
-        UBR = UBR_VGG(args.base_model_path, not args.fc)
+        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze)
+    elif args.net == 'UBR_C4':
+        UBR = UBR_C4(args.base_model_path, not args.fc, not args.not_freeze)
+    elif args.net == 'UBR_C3':
+        UBR = UBR_C3(args.base_model_path, not args.not_freeze)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -286,6 +293,8 @@ def train():
         random_box_generator = UniformBoxGenerator(args.iou_th)
     elif args.rand == 'uniform_iou':
         random_box_generator = UniformIouBoxGenerator(int(args.iou_th * 100), 95)
+    elif args.rand == 'natural_box':
+        random_box_generator = NaturalBoxGenerator(args.iou_th)
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode

@@ -4,11 +4,10 @@ import torch.nn as nn
 from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
-class UBR_C4(nn.Module):
-    def __init__(self, base_model_path=None, pretrained_fc=True, freeze_before_conv3=True):
-        super(UBR_C4, self).__init__()
+class UBR_C3(nn.Module):
+    def __init__(self, base_model_path=None, freeze_before_conv3=True):
+        super(UBR_C3, self).__init__()
         self.model_path = base_model_path
-        self.use_pretrained_fc = pretrained_fc
 
     def _init_modules(self):
         vgg = models.vgg16()
@@ -19,29 +18,24 @@ class UBR_C4(nn.Module):
             state_dict = torch.load(self.model_path)
             vgg.load_state_dict({k: v for k, v in state_dict.items() if k in vgg.state_dict()})
 
-        vgg.classifier = nn.Sequential(*list(vgg.classifier._modules.values())[:-1])
-
         # not using the last maxpool layer
-        self.base = nn.Sequential(*list(vgg.features._modules.values())[:-10])
+        self.base = nn.Sequential(*list(vgg.features._modules.values())[:-19])
 
         # Fix the layers before conv3:
         if self.freeze_before_conv3:
             for layer in range(10):
                 for p in self.base[layer].parameters(): p.requires_grad = False
 
-        if self.use_pretrained_fc:
-            self.top = vgg.classifier
-        else:
-            self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7, 4096),
-                nn.ReLU(True),
-                nn.Dropout(),
-                nn.Linear(4096, 4096),
-                nn.ReLU(True),
-                nn.Dropout()
-            )
+        self.top = nn.Sequential(
+            nn.Linear(256 * 10 * 10, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout()
+        )
         self.bbox_pred_layer = nn.Linear(4096, 4)
-        self.roi_align = RoIAlignAvg(7, 7, 1.0/8.0)
+        self.roi_align = RoIAlignAvg(10, 10, 1.0/4.0)
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
