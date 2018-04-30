@@ -9,6 +9,7 @@ class UBR_C4(nn.Module):
         super(UBR_C4, self).__init__()
         self.model_path = base_model_path
         self.use_pretrained_fc = pretrained_fc
+        self.freeze_before_conv3 = freeze_before_conv3
 
     def _init_modules(self):
         vgg = models.vgg16()

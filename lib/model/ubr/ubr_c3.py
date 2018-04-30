@@ -8,6 +8,7 @@ class UBR_C3(nn.Module):
     def __init__(self, base_model_path=None, freeze_before_conv3=True):
         super(UBR_C3, self).__init__()
         self.model_path = base_model_path
+        self.freeze_before_conv3 = freeze_before_conv3
 
     def _init_modules(self):
         vgg = models.vgg16()
