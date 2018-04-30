@@ -52,10 +52,9 @@ class UBR_C3(nn.Module):
                 m.bias.data.zero_()
 
         normal_init(self.bbox_pred_layer, 0, 0.001, False)
-        if not self.use_pretrained_fc:
-            for layer in self.top:
-                if hasattr(layer, 'weight'):
-                    normal_init(layer, 0, 0.001, False)
+        for layer in self.top:
+            if hasattr(layer, 'weight'):
+                normal_init(layer, 0, 0.001, False)
 
     def create_architecture(self):
         self._init_modules()
