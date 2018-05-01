@@ -195,7 +195,12 @@ def train():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    if args.dataset == 'coco60_10000_20000':
+    if args.dataset == 'coco_basic':
+        args.train_anno = './data/coco/annotations/coco60_train_21413_61353.json'
+        args.val_anno = './data/coco/annotations/coco60_val_900_2575.json'
+        args.tval_anno = './data/coco/annotations/voc20_val_740_2844.json'
+
+    elif args.dataset == 'coco60_10000_20000':
         args.train_anno = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json'
         args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json'
     elif args.dataset == 'coco40_10000_20000':

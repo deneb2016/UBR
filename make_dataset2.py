@@ -25,49 +25,29 @@ def remove_crowd_images(image_set, object_set):
 def remove_nontarget_categories(image_set, object_set, include_categories):
     tmp_obj_set = []
     tmp_img_set = []
-    include_img = [False for i in range(1000000)]
+    include_target_categories = [False for i in range(1000000)]
+    include_nontarget_categories = [False for i in range(1000000)]
 
     for obj in object_set:
         if include_categories[obj['category_id']]:
-            include_img[obj['image_id']] = True
-            tmp_obj_set.append(obj)
+            include_target_categories[obj['image_id']] = True
+        else:
+            include_nontarget_categories[obj['image_id']] = True
 
     for img in image_set:
-        if include_img[img['id']]:
+        if include_target_categories[img['id']] and not include_nontarget_categories[img['id']]:
             tmp_img_set.append(img)
+
+    for obj in object_set:
+        img_id = obj['image_id']
+        if include_target_categories[img_id] and not include_nontarget_categories[img_id]:
+            tmp_obj_set.append(obj)
 
     return tmp_img_set, tmp_obj_set
 
 
-def select_random_images(image_set, object_set, num_images, num_objects):
-    tmp_obj_set = []
-    include_image = [False for i in range(1000000)]
-    candidate_object_set = []
-    object_cnt_per_image = [0 for i in range(1000000)]
-
-    image_set = np.random.choice(image_set, num_images, replace=False).tolist()
-
-    for img in image_set:
-        include_image[img['id']] = True
-
-    np.random.shuffle(object_set)
-    for obj in object_set:
-        if include_image[obj['image_id']]:
-            if object_cnt_per_image[obj['image_id']] == 0:
-                tmp_obj_set.append(obj)
-            else:
-                candidate_object_set.append(obj)
-            object_cnt_per_image[obj['image_id']] += 1
-
-    tmp_obj_set.extend(np.random.choice(candidate_object_set, num_objects - num_images, replace=False).tolist())
-
-    return image_set, tmp_obj_set
-
-
-NUM_IMAGES = 30000
-NUM_BOXES = 60000
 np.random.seed(1085)
-anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_train2017.json'))
+anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_val2017.json'))
 
 want_classes = [line.rstrip() for line in open('voc_categories.txt')]
 include_categories = []
@@ -94,8 +74,6 @@ image_set, object_set = remove_crowd_images(image_set, object_set)
 print("After crowd removing, there are %d images and %d objects" % (len(image_set), len(object_set)))
 image_set, object_set = remove_nontarget_categories(image_set, object_set, include_categories)
 print('For selected categories, there are %d images and %d objects' % (len(image_set), len(object_set)))
-image_set, object_set = select_random_images(image_set, object_set, NUM_IMAGES, NUM_BOXES)
-print('Finally, there are %d images and %d objects' % (len(image_set), len(object_set)))
 
 new_anno = dict()
 new_anno['info'] = anno['info']
@@ -103,5 +81,7 @@ new_anno['licenses'] = anno['licenses']
 new_anno['images'] = image_set
 new_anno['categories'] = new_categories
 new_anno['annotations'] = object_set
+NUM_IMAGES = len(new_anno['images'])
+NUM_BOXES = len(new_anno['annotations'])
 print(len(new_anno['images']), len(new_anno['annotations']))
-json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/instances_train2017_voc20classes_%d_%d.json' % (NUM_IMAGES, NUM_BOXES), 'w'))
+json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/voc20_val_%d_%d.json' % (NUM_IMAGES, NUM_BOXES), 'w'))
