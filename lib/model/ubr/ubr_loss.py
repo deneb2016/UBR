@@ -338,6 +338,7 @@ class ClassificationAdversarialLoss1(nn.Module):
         self._overlap_threshold = overlap_threshold
         self.classifier = nn.Linear(4096, num_classes)
         self.num_classes = num_classes
+        self.reverse = False
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
@@ -349,8 +350,15 @@ class ClassificationAdversarialLoss1(nn.Module):
 
         normal_init(self.classifier, 0, 0.001, False)
 
+    def start_reverse_gradient(self):
+        print('start reverse gradient')
+        self.reverse = True
+
     def forward(self, rois, gt_box, shared_feat, gt_labels):
-        shared_feat = GradientReversalLayer.apply(shared_feat)
+        if self.reverse:
+            shared_feat = GradientReversalLayer.apply(shared_feat)
+        else:
+            shared_feat = Variable(shared_feat.data.clone())
         class_pred = self.classifier(shared_feat)
         num_rois = rois.size(0)
         iou = jaccard(rois, gt_box)

@@ -882,17 +882,30 @@
 import torch
 from lib.model.utils.box_utils import jaccard, to_point_form, to_center_form
 from matplotlib import pyplot as plt
-from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator
+from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator, NaturalUniformBoxGenerator
 import numpy as np
 
-generator = UniformBoxGenerator(0.3)
-#generator = NaturalBoxGenerator(0.3)
-import time
+iou_th = 0.2
+generator = UniformBoxGenerator(iou_th)
 base_box = torch.FloatTensor([100, 100, 200,200])
 boxes = generator.get_rand_boxes(base_box, 1000, 303, 303)
-print(boxes.size(0))
 iou = jaccard(base_box.unsqueeze(0), boxes[:, 1:])
-print(iou)
+for th in range(0, 10):
+    print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())
+
+
+generator = NaturalBoxGenerator(iou_th)
+base_box = torch.FloatTensor([100, 100, 200,200])
+boxes = generator.get_rand_boxes(base_box, 1000, 303, 303)
+iou = jaccard(base_box.unsqueeze(0), boxes[:, 1:])
+for th in range(0, 10):
+    print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())
+
+
+generator = NaturalUniformBoxGenerator(iou_th)
+base_box = torch.FloatTensor([100, 100, 200,200])
+boxes = generator.get_rand_boxes(base_box, 1000, 303, 303)
+iou = jaccard(base_box.unsqueeze(0), boxes[:, 1:])
 for th in range(0, 10):
     print(iou.lt((th + 1) / 10).sum() - iou.lt(th / 10).sum())
 #

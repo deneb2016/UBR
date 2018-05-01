@@ -33,19 +33,21 @@ def weights_normal_init(model, dev=0.01):
                 m.weight.data.normal_(0.0, dev)
 
 
-def clip_gradient(model, clip_norm):
+def clip_gradient(models, clip_norm):
     """Computes a gradient clipping coefficient based on gradient norm."""
     totalnorm = 0
-    for p in model.parameters():
-        if p.requires_grad and p.grad is not None:
-            modulenorm = p.grad.data.norm()
-            totalnorm += modulenorm ** 2
+    for model in models:
+        for p in model.parameters():
+            if p.requires_grad and p.grad is not None:
+                modulenorm = p.grad.data.norm()
+                totalnorm += modulenorm ** 2
     totalnorm = np.sqrt(totalnorm)
 
     norm = clip_norm / max(totalnorm, clip_norm)
-    for p in model.parameters():
-        if p.requires_grad and p.grad is not None:
-            p.grad.mul_(norm)
+    for model in models:
+        for p in model.parameters():
+            if p.requires_grad and p.grad is not None:
+                p.grad.mul_(norm)
 
 def vis_detections(im, class_name, dets, thresh=0.8):
     """Visual debugging of detections."""

@@ -20,12 +20,13 @@ from lib.model.ubr.ubr_c3 import UBR_C3
 
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
-from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator
+from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator, NaturalUniformBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
 import random
+import math
 
 def parse_args():
     """
@@ -40,7 +41,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--epochs', dest='max_epochs',
                         help='number of epochs to train',
-                        default=15, type=int)
+                        default=10, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=1000, type=int)
@@ -92,7 +93,7 @@ def parse_args():
                         default=0.001, type=float)
     parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                         help='step to do learning rate decay, unit is epoch',
-                        default=5, type=int)
+                        default=3, type=int)
     parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                         help='learning rate decay ratio',
                         default=0.1, type=float)
@@ -277,6 +278,8 @@ def train():
         assert args.net == checkpoint['net']
         args.start_epoch = checkpoint['epoch']
         UBR.load_state_dict(checkpoint['model'])
+        if args.cal:
+            cal_layer.load_state_dict(checkpoint['cal_layer'])
         print(checkpoint['optimizer'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr = optimizer.param_groups[0]['lr']
@@ -300,6 +303,8 @@ def train():
         random_box_generator = UniformIouBoxGenerator(int(args.iou_th * 100), 95)
     elif args.rand == 'natural_box':
         random_box_generator = NaturalBoxGenerator(args.iou_th)
+    elif args.rand == 'natural_uniform':
+        random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
@@ -311,8 +316,14 @@ def train():
         effective_iteration = 0
         start = time.time()
 
+        if args.cal and epoch >= args.cal_start and epoch > 1:
+            cal_layer.start_reverse_gradient()
+
         data_iter = iter(train_dataloader)
         for step in range(1, len(train_dataset) + 1):
+            if args.cal and args.cal_start == 1 and epoch == 1 and step == 101:
+                cal_layer.start_reverse_gradient()
+
             im_data, gt_boxes, gt_labels, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
             raw_img = raw_img.squeeze().numpy()
             gt_labels = gt_labels[0, :]
@@ -369,7 +380,7 @@ def train():
             loss = loss.mean()
             loss_temp += loss.data[0]
 
-            if args.cal and args.cal_start <= epoch:
+            if args.cal:
                 cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
                 if args.static_alpha:
                     effective_alpha = args.alpha
@@ -384,9 +395,14 @@ def train():
 
             # backward
             optimizer.zero_grad()
+
             loss.backward()
-            if args.net == 'UBR_VGG':
-                clip_gradient(UBR, 10.)
+
+            if args.cal:
+                clip_gradient([UBR, cal_layer], 10.)
+            else:
+                clip_gradient([UBR], 10.0)
+
             optimizer.step()
             effective_iteration += 1
 
@@ -408,6 +424,9 @@ def train():
                 mean_boxes_per_iter = 0
                 start = time.time()
 
+            if math.isnan(loss_temp):
+                return
+
         val_loss = validate(UBR, random_box_generator, criterion, val_dataset, val_dataloader)
         tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset, tval_dataloader)
         print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
@@ -423,13 +442,15 @@ def train():
 
         if epoch % args.save_interval == 0:
             save_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.session, epoch))
-            save_checkpoint({
-                'net' : args.net,
-                'session': args.session,
-                'epoch': epoch + 1,
-                'model': UBR.state_dict(),
-                'optimizer': optimizer.state_dict()
-            }, save_name)
+            checkpoint = dict()
+            checkpoint['net'] = args.net
+            checkpoint['session'] = args.session
+            checkpoint['epoch'] = epoch + 1
+            checkpoint['model'] = UBR.state_dict()
+            checkpoint['optimizer'] = optimizer.state_dict()
+            if args.cal:
+                checkpoint['cal_layer'] = cal_layer.state_dict()
+            save_checkpoint(checkpoint, save_name)
             print('save model: {}'.format(save_name))
 
     log_file.close()
