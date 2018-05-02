@@ -29,6 +29,7 @@ from lib.model.ubr.ubr_loss import UBR_IoULoss, UBR_ClassLoss
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
 import torch.nn.functional as F
+import math
 
 def parse_args():
     """
@@ -36,8 +37,8 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='Train a Universal Object Box Regressor')
     parser.add_argument('--net', dest='net',
-                        help='vgg16',
-                        default='vgg16', type=str)
+                        help='UBR_DML',
+                        default='UBR_DML', type=str)
     parser.add_argument('--start_epoch', dest='start_epoch',
                         help='starting epoch',
                         default=1, type=int)
@@ -46,18 +47,21 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
-                        default=10, type=int)
+                        default=1000, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
                         help='directory to save models', default="../repo/ubr")
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
                         default=0, type=int)
-    parser.add_argument('--anno', default = './data/coco/annotations/instances_train2014_subtract_voc.json')
-    parser.add_argument('--images', default = './data/coco/images/train2014/')
-    parser.add_argument('--cuda', dest='cuda',
-                        help='whether use CUDA',
-                        action='store_true')
+
+    parser.add_argument('--dataset', type=str)
+    parser.add_argument('--train_anno', default = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json')
+    parser.add_argument('--val_anno', default = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json')
+    parser.add_argument('--tval_anno', type=str, default='./data/coco/annotations/instances_val2017_voc20classes_1000_2000.json')
+    parser.add_argument('--train_images', default = './data/coco/images/train2017/')
+    parser.add_argument('--val_images', default='./data/coco/images/val2017/')
+
     parser.add_argument('--multiscale', action = 'store_true')
 
     parser.add_argument('--iou_th', type=float, help='iou threshold to select rois')
@@ -112,25 +116,94 @@ def parse_args():
     return args
 
 
-if __name__ == '__main__':
+def validate(model, seed_boxes, criterion, dataset, dataloader):
+    model.eval()
+    data_iter = iter(dataloader)
+    tot_loss = 0
+    tot_cnt = 0
+    num_gen_box = 256
+    for step in range(len(dataset)):
+        im_data, gt_boxes, _, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
+        raw_img = raw_img.squeeze().numpy()
+        gt_boxes = gt_boxes[0, :, :]
+        data_height = data_height[0]
+        data_width = data_width[0]
+        im_scale = im_scale[0]
+        im_id = im_id[0]
+        im_data = Variable(im_data.cuda())
+        num_gt_box = gt_boxes.size(0)
+
+        # generate random box from given gt box
+        # the shape of rois is (n, 5), the first column is not used
+        # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
+        num_per_base = num_gen_box // num_gt_box
+        sampled_seed_boxes = seed_boxes[torch.randperm(10000)[:num_per_base]]
+        rois = generate_adjacent_boxes(gt_boxes, sampled_seed_boxes, data_height, data_width).view(-1, 5)
+
+        rois = Variable(rois.cuda())
+        gt_boxes = Variable(gt_boxes.cuda())
+
+        bbox_pred = model(im_data, rois)
+
+        loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+        if loss is None:
+            print('val zero mached')
+        else:
+            loss = loss.mean()
+            tot_loss += loss.data[0]
+            tot_cnt += 1
+
+    model.train()
+    return tot_loss / tot_cnt
+
+
+def train():
     args = parse_args()
 
     print('Called with args:')
     print(args)
     np.random.seed(3)
 
-    if torch.cuda.is_available() and not args.cuda:
-        print("WARNING: You have a CUDA device, so you should probably run with --cuda")
-
-    output_dir = args.save_dir + "/" + args.net
+    output_dir = args.save_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = COCODataset(args.anno, args.images, training=True, multi_scale=args.multiscale)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
+    if args.dataset == 'coco_basic':
+        args.train_anno = './data/coco/annotations/coco60_train_21413_61353.json'
+        args.val_anno = './data/coco/annotations/coco60_val_900_2575.json'
+        args.tval_anno = './data/coco/annotations/voc20_val_740_2844.json'
+
+    elif args.dataset == 'coco60_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json'
+    elif args.dataset == 'coco40_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco40classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco40classes_1000_2000.json'
+    elif args.dataset == 'coco20_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco20classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco20classes_1000_2000.json'
+    elif args.dataset == 'voc20_10000_20000':
+        args.train_anno = './data/coco/annotations/instances_train2017_voc20classes_10000_20000.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_voc20classes_1000_2000.json'
+    elif args.dataset == 'coco_max':
+        args.train_anno = './data/coco/annotations/instances_train2017_coco60classes_90577_294383.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_3801_12484.json'
+    elif args.dataset == 'coco_original':
+        args.train_anno = './data/coco/annotations/instances_train2014_subtract_voc.json'
+        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_3801_12484.json'
+    else:
+        print('@@@@@no dataset@@@@@')
+        return
+
+    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
+    val_dataset = COCODataset(args.val_anno, args.val_images, training=False, multi_scale=False)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
+    tval_dataset = COCODataset(args.tval_anno, args.val_images, training=False, multi_scale=False)
+    tval_dataloader = torch.utils.data.DataLoader(tval_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
 
     # initilize the network here.
-    if args.net == 'vgg16':
+    if args.net == 'UBR_DML':
         UBR = UBR_VGG_DML(args.base_model_path, training=True, num_classes=60)
     else:
         print("network is not defined")
@@ -154,10 +227,13 @@ if __name__ == '__main__':
     elif args.optimizer == "sgd":
         optimizer = torch.optim.SGD(params, momentum=0.9)
 
+    print(optimizer.state_dict())
     if args.resume:
-        load_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+        load_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.checksession, args.checkepoch))
         print("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
+        print(checkpoint['optimizer'])
+        assert args.net == checkpoint['net']
         args.session = checkpoint['session']
         args.start_epoch = checkpoint['epoch']
         UBR.load_state_dict(checkpoint['model'])
@@ -165,8 +241,12 @@ if __name__ == '__main__':
         lr = optimizer.param_groups[0]['lr']
         print("loaded checkpoint %s" % (load_name))
 
-    if args.cuda:
-        UBR.cuda()
+    log_file_name = os.path.join(output_dir, 'log_{}_{}.txt'.format(args.net, args.session))
+    log_file = open(log_file_name, 'w')
+    log_file.write(str(args))
+    log_file.write('\n')
+
+    UBR.cuda()
 
     if args.loss == 'smoothl1':
         criterion = UBR_SmoothL1Loss(args.iou_th)
@@ -180,6 +260,7 @@ if __name__ == '__main__':
     hard_ratio = args.hard_ratio
     sorted_previous_rois = {}
     seed_boxes = torch.load('seed_boxes.pt').view(-1, 4)
+    val_seed_boxes = torch.load('seed_boxes_test.pt').view(-1, 4)
     alpha = args.alpha
     for epoch in range(args.start_epoch, args.max_epochs):
         # setting to train mode
@@ -207,8 +288,8 @@ if __name__ == '__main__':
         else:
             dml = False
 
-        data_iter = iter(dataloader)
-        for step in range(len(dataset)):
+        data_iter = iter(train_dataloader)
+        for step in range(len(train_dataset)):
             im_data, gt_boxes, box_categories, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
             raw_img = raw_img.squeeze().numpy()
             gt_boxes = gt_boxes[0, :, :]
@@ -253,8 +334,8 @@ if __name__ == '__main__':
                 # backward
                 optimizer.zero_grad()
                 loss.backward()
-                if args.net == "vgg16":
-                    clip_gradient(UBR, 10.)
+                if args.net == "UBR_DML":
+                    clip_gradient([UBR], 10.)
                 optimizer.step()
 
             if step % args.disp_interval == 0:
@@ -263,21 +344,39 @@ if __name__ == '__main__':
                     loss_temp /= args.disp_interval
                     class_loss_temp /= args.disp_interval
                     box_loss_temp /= args.disp_interval
-                print("[session %d][epoch %2d][iter %4d] loss: %.4f, box_loss: %.4f, class_loss: %.4f, lr: %.2e, time: %f" % (args.session, epoch, step, loss_temp, box_loss_temp, class_loss_temp, lr, end - start))
+                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, box_loss: %.4f, class_loss: %.4f, lr: %.2e, time: %.1f" % (args.net, args.session, epoch, step, loss_temp, box_loss_temp, class_loss_temp, lr, end - start))
+                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, box_loss: %.4f, class_loss: %.4f, lr: %.2e, time: %.1f\n" % (args.net, args.session, epoch, step, loss_temp, box_loss_temp, class_loss_temp, lr, end - start))
+
                 loss_temp = 0
                 class_loss_temp = 0
                 box_loss_temp = 0
 
                 start = time.time()
 
-        save_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.session, epoch, step))
+            if math.isnan(loss_temp):
+                print('@@@@@@@@@@@@@@nan@@@@@@@@@@@@@')
+                log_file.write('@@@@@@@nan@@@@@@@@\n')
+                return
+
+        val_loss = validate(UBR, val_seed_boxes, criterion, val_dataset, val_dataloader)
+        tval_loss = validate(UBR, val_seed_boxes, criterion, tval_dataset, tval_dataloader)
+        print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
+        log_file.write('[net %s][session %d][epoch %2d] validation loss: %.4f\n' % (args.net, args.session, epoch, val_loss))
+        print('[net %s][session %d][epoch %2d] transfer validation loss: %.4f' % (args.net, args.session, epoch, tval_loss))
+        log_file.write('[net %s][session %d][epoch %2d] transfer validation loss: %.4f\n' % (args.net, args.session, epoch, tval_loss))
+        log_file.flush()
+
+        save_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.session, epoch))
         save_checkpoint({
+            'net' : args.net,
             'session': args.session,
             'epoch': epoch + 1,
             'model': UBR.state_dict(),
             'optimizer': optimizer.state_dict()
         }, save_name)
         print('save model: {}'.format(save_name))
+    log_file.close()
 
-        end = time.time()
-        print(end - start)
+
+if __name__ == '__main__':
+    train()

@@ -403,6 +403,7 @@ def train():
                 clip_gradient([UBR, cal_layer], 10.)
             else:
                 clip_gradient([UBR], 10.0)
+                clip_gradient([cal_layer], 5.)
 
             optimizer.step()
             effective_iteration += 1

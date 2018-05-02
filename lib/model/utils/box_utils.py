@@ -187,22 +187,22 @@ def to_point_form(boxes):
 #     return ret
 #
 
-# def generate_adjacent_boxes(base_boxes, seed_boxes, im_height, im_width):
-#     base_boxes = to_center_form(base_boxes)
-#     ret = torch.zeros((base_boxes.size(0), seed_boxes.size(0), 5))
-#     for i in range(base_boxes.size(0)):
-#         center_x = base_boxes[i, 0] + seed_boxes[:, 0] * base_boxes[i, 2]
-#         center_y = base_boxes[i, 1] + seed_boxes[:, 1] * base_boxes[i, 3]
-#         width = base_boxes[i, 2] * seed_boxes[:, 2]
-#         height = base_boxes[i, 3] * seed_boxes[:, 3]
-#         here_boxes = torch.cat([center_x.unsqueeze(1), center_y.unsqueeze(1), width.unsqueeze(1), height.unsqueeze(1)], 1)
-#         here_boxes = to_point_form(here_boxes)
-#         ret[i, :, 1:] = here_boxes
-#         ret[i, :, 1].clamp_(min=0, max=im_width - 1)
-#         ret[i, :, 2].clamp_(min=0, max=im_height - 1)
-#         ret[i, :, 3].clamp_(min=0, max=im_width - 1)
-#         ret[i, :, 4].clamp_(min=0, max=im_height - 1)
-#     return ret
+def generate_adjacent_boxes(base_boxes, seed_boxes, im_height, im_width):
+    base_boxes = to_center_form(base_boxes)
+    ret = torch.zeros((base_boxes.size(0), seed_boxes.size(0), 5))
+    for i in range(base_boxes.size(0)):
+        center_x = base_boxes[i, 0] + seed_boxes[:, 0] * base_boxes[i, 2]
+        center_y = base_boxes[i, 1] + seed_boxes[:, 1] * base_boxes[i, 3]
+        width = base_boxes[i, 2] * seed_boxes[:, 2]
+        height = base_boxes[i, 3] * seed_boxes[:, 3]
+        here_boxes = torch.cat([center_x.unsqueeze(1), center_y.unsqueeze(1), width.unsqueeze(1), height.unsqueeze(1)], 1)
+        here_boxes = to_point_form(here_boxes)
+        ret[i, :, 1:] = here_boxes
+        ret[i, :, 1].clamp_(min=0, max=im_width - 1)
+        ret[i, :, 2].clamp_(min=0, max=im_height - 1)
+        ret[i, :, 3].clamp_(min=0, max=im_width - 1)
+        ret[i, :, 4].clamp_(min=0, max=im_height - 1)
+    return ret
 
 
 # def generate_adjacent_boxes(base_box, num_boxes_per_base, im_width, im_height, var, use_gaussian=False):
