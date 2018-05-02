@@ -340,7 +340,7 @@ class ClassificationAdversarialLoss1(nn.Module):
         self.num_classes = num_classes
         self.reverse = False
 
-    def _init_weights(self):
+    def init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
             if truncated:
                 m.weight.data.normal_().fmod_(2).mul_(stddev).add_(mean) # not a perfect approximation

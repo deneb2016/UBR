@@ -255,6 +255,7 @@ def train():
 
     if args.cal:
         cal_layer = ClassificationAdversarialLoss1(args.iou_th, train_dataset.num_classes)
+        cal_layer.init_weights()
 
         for key, value in dict(cal_layer.named_parameters()).items():
             if value.requires_grad:
@@ -398,7 +399,7 @@ def train():
 
             loss.backward()
 
-            if args.cal:
+            if args.cal and cal_layer.reverse:
                 clip_gradient([UBR, cal_layer], 10.)
             else:
                 clip_gradient([UBR], 10.0)
@@ -425,6 +426,8 @@ def train():
                 start = time.time()
 
             if math.isnan(loss_temp):
+                print('@@@@@@@@@@@@@@nan@@@@@@@@@@@@@')
+                log_file.write('@@@@@@@nan@@@@@@@@\n')
                 return
 
         val_loss = validate(UBR, random_box_generator, criterion, val_dataset, val_dataloader)
