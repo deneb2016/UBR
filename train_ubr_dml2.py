@@ -113,6 +113,9 @@ def parse_args():
                         default=0, type=int)
     parser.add_argument('--base_model_path', default = 'data/pretrained_model/vgg16_caffe.pth')
 
+
+    parser.add_argument('--rand', type=str, default='uniform_box', help='uniform_box or natural_box or uniform_iou')
+
     args = parser.parse_args()
     return args
 
