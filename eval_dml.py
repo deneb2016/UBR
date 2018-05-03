@@ -93,7 +93,7 @@ if __name__ == '__main__':
     if torch.cuda.is_available() and not args.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-    output_dir = args.save_dir + "/" + args.net
+    output_dir = args.save_dir 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
     UBR.create_architecture()
 
-    load_name = os.path.join(output_dir, 'ubr_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+    load_name = os.path.join(output_dir, 'UBR_DML_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
     print("loading checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     UBR.load_state_dict(checkpoint['model'])
