@@ -983,3 +983,12 @@
 #             cy.append(dy)
 #             dy += step
 #         dx += step
+
+from scipy.ndimage.interpolation import rotate
+from scipy.misc import imread
+import numpy as np
+from matplotlib import pyplot as plt
+a = imread('/home/seungkwan/000019.jpg')
+a = rotate(a, 270)
+plt.imshow(a)
+plt.show()

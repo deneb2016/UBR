@@ -8,16 +8,19 @@ from scipy.misc import imread
 import json
 import numpy as np
 import cv2
+from scipy.ndimage.interpolation import rotate
+from lib.model.utils.box_utils import to_point_form, to_center_form
 
 
 class COCODataset(data.Dataset):
-    def __init__(self, anno_path, img_path, training, multi_scale=False, flip=False, rotation=False):
+    def __init__(self, anno_path, img_path, training, multi_scale=False, rotation=False):
         print('dataset loading...')
         self._anno = json.load(open(anno_path))
         self._object_set = {}
         self._image_set = []
         self.training = training
         self.multi_scale = multi_scale
+        self.rotation = rotation
         self._id_to_index = {}
 
         crowd_img = {}
@@ -80,13 +83,40 @@ class COCODataset(data.Dataset):
             flipped_gt_boxes[:, 2] = im.shape[1] - gt_boxes[:, 0]
             gt_boxes = flipped_gt_boxes
 
+        if self.rotation:
+            gt_boxes = to_center_form(gt_boxes)
+            rotated_gt_boxes = gt_boxes.copy()
+            h, w = im.shape[0], im.shape[1]
+            angle = np.random.choice([0, 90, 180, 270])
+            #im = rotate(im, angle)
+            #raw_img = rotate(raw_img, angle)
+
+            if angle == 90:
+                im = im.transpose([1, 0, 2])[::-1, :, :].copy()
+                raw_img = raw_img.transpose([1, 0, 2])[::-1, :, :].copy()
+
+                rotated_gt_boxes[:, 0], rotated_gt_boxes[:, 1] = gt_boxes[:, 1], w - gt_boxes[:, 0]
+                rotated_gt_boxes[:, 2], rotated_gt_boxes[:, 3] = gt_boxes[:, 3], gt_boxes[:, 2]
+            elif angle == 180:
+                im = im[::-1, ::-1, :].copy()
+                raw_img = raw_img[::-1, ::-1, :].copy()
+
+                rotated_gt_boxes[:, 0], rotated_gt_boxes[:, 1] = w - gt_boxes[:, 0], h - gt_boxes[:, 1]
+            elif angle == 270:
+                im = im.transpose([1, 0, 2])[:, ::-1, :].copy()
+                raw_img = raw_img.transpose([1, 0, 2])[:, ::-1, :].copy()
+
+                rotated_gt_boxes[:, 0], rotated_gt_boxes[:, 1] = h - gt_boxes[:, 1], gt_boxes[:, 0]
+                rotated_gt_boxes[:, 2], rotated_gt_boxes[:, 3] = gt_boxes[:, 3], gt_boxes[:, 2]
+            gt_boxes = to_point_form(rotated_gt_boxes)
+
         im = im.astype(np.float32, copy=False)
         im -= np.array([[[102.9801, 115.9465, 122.7717]]])
         im_shape = im.shape
         im_size_min = np.min(im_shape[0:2])
 
         if self.multi_scale:
-            im_scale = (np.random.choice([480, 576, 688, 864, 1000]) if self.training else 600) / float(im_size_min)
+            im_scale = np.random.choice([416, 500, 600, 720, 864]) / float(im_size_min)
         else:
             im_scale = 600 / float(im_size_min)
         im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)

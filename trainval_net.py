@@ -65,6 +65,8 @@ def parse_args():
 
     parser.add_argument('--multiscale', action = 'store_true')
 
+    parser.add_argument('--rotation', action='store_true')
+
     parser.add_argument('--iou_th', type=float, help='iou threshold to use for training')
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
@@ -223,7 +225,7 @@ def train():
         print('@@@@@no dataset@@@@@')
         return
 
-    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale)
+    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale, rotation=args.rotation)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
     val_dataset = COCODataset(args.val_anno, args.val_images, training=False, multi_scale=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
@@ -366,11 +368,11 @@ def train():
 
 
             #refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
-            # plt.imshow(raw_img)
+            #plt.imshow(raw_img)
             # draw_box(rois[:, 1:].data / im_scale)
             #draw_box(refined_boxes / im_scale, 'yellow')
-            # draw_box(gt_boxes.data / im_scale, 'black')
-            # plt.show()
+            #draw_box(gt_boxes.data / im_scale, 'black')
+            #plt.show()
             loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
 
             if loss is None:
@@ -401,9 +403,11 @@ def train():
 
             if args.cal and cal_layer.reverse:
                 clip_gradient([UBR, cal_layer], 10.)
-            else:
+            elif args.cal:
                 clip_gradient([UBR], 10.0)
                 clip_gradient([cal_layer], 5.)
+            else:
+                clip_gradient([UBR], 10.0)
 
             optimizer.step()
             effective_iteration += 1

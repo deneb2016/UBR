@@ -79,10 +79,10 @@ class UBR_VGG(nn.Module):
         pooled_feat = self.roi_align(base_feat, rois)
 
         # feed pooled features to top model
-        pooled_feat = self._head_to_tail(pooled_feat)
+        shared_feat = self._head_to_tail(pooled_feat)
 
         # compute bbox offset
-        bbox_pred = self.bbox_pred_layer(pooled_feat)
+        bbox_pred = self.bbox_pred_layer(shared_feat)
 
         bbox_pred = bbox_pred.view(-1, 4)
 

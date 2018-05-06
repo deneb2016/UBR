@@ -114,7 +114,10 @@ def inverse_transform(from_box, delta):
 
 
 def to_center_form(boxes):
-    ret = boxes.clone()
+    if isinstance(boxes, np.ndarray):
+        ret = boxes.copy()
+    else:
+        ret = boxes.clone()
     ret[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2
     ret[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2
     ret[:, 2] = boxes[:, 2] - boxes[:, 0]
@@ -123,7 +126,10 @@ def to_center_form(boxes):
 
 
 def to_point_form(boxes):
-    ret = boxes.clone()
+    if isinstance(boxes, np.ndarray):
+        ret = boxes.copy()
+    else:
+        ret = boxes.clone()
     ret[:, 0] = boxes[:, 0] - boxes[:, 2] / 2
     ret[:, 1] = boxes[:, 1] - boxes[:, 3] / 2
     ret[:, 2] = boxes[:, 0] + boxes[:, 2] / 2
