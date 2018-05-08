@@ -87,6 +87,8 @@ def parse_args():
 
     parser.add_argument('--not_freeze', help='do not freeze before conv3', action='store_true')
 
+    parser.add_argument('--fl', type=int, default=0)
+
     # config optimization
     parser.add_argument('--o', dest='optimizer',
                         help='training optimizer',
@@ -243,7 +245,7 @@ def train():
     elif args.net == 'UBR_C3':
         UBR = UBR_C3(args.base_model_path, not args.not_freeze)
     elif args.net == 'UBR_FREEZE':
-        UBR = UBR_VGG_FREEZE_CONV()
+        UBR = UBR_VGG_FREEZE_CONV(args.fl)
     else:
         print("network is not defined")
         pdb.set_trace()
