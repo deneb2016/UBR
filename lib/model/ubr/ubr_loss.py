@@ -109,7 +109,7 @@ class UBR_IoULoss(nn.Module):
         area_b = (box_b[:, 2] - box_b[:, 0]) * (box_b[:, 3] - box_b[:, 1])
         union = area_a + area_b - inter
         iou = inter / union  # [A,B]
-        loss = - torch.log(iou + 0.1)
+        loss = - torch.log(iou + 0.0001)
         return loss
 
 

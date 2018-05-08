@@ -154,7 +154,7 @@ def extract_feature():
         # draw_box(gt_boxes.data / im_scale, 'black')
         # plt.show()
 
-    pickle.dump({'label': feature_labels, 'feature': extracted_features}, open('tval_extracted_features', 'wb'))
+    pickle.dump({'label': feature_labels, 'feature': extracted_features}, open('cal_tval_pooled_features', 'wb'))
 
 
 if __name__ == '__main__':

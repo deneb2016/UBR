@@ -17,7 +17,6 @@ from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, cli
 from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.ubr.ubr_c4 import UBR_C4
 from lib.model.ubr.ubr_c3 import UBR_C3
-from lib.model.ubr.ubr_freeze_conv import UBR_VGG_FREEZE_CONV
 
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
@@ -226,8 +225,8 @@ def train():
         print('@@@@@no dataset@@@@@')
         return
 
-    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale, rotation=args.rotation)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
+    train_dataset = COCODataset(args.train_anno, args.train_images, training=False, multi_scale=args.multiscale, rotation=args.rotation)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
     val_dataset = COCODataset(args.val_anno, args.val_images, training=False, multi_scale=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
     tval_dataset = COCODataset(args.tval_anno, args.val_images, training=False, multi_scale=False)
@@ -242,8 +241,6 @@ def train():
         UBR = UBR_C4(args.base_model_path, not args.fc, not args.not_freeze)
     elif args.net == 'UBR_C3':
         UBR = UBR_C3(args.base_model_path, not args.not_freeze)
-    elif args.net == 'UBR_FREEZE':
-        UBR = UBR_VGG_FREEZE_CONV()
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -275,7 +272,7 @@ def train():
         lr = lr * 0.1
         optimizer = torch.optim.Adam(params)
     elif args.optimizer == "sgd":
-        optimizer = torch.optim.SGD(params, momentum=0.9)
+        optimizer = torch.optim.SGD(params, momentum=0)
 
     if args.resume:
         load_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.checksession, args.checkepoch))
@@ -312,6 +309,7 @@ def train():
     elif args.rand == 'natural_uniform':
         random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
 
+    cached_rois = {}
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
         UBR.train()
@@ -326,7 +324,7 @@ def train():
             cal_layer.start_reverse_gradient()
 
         data_iter = iter(train_dataloader)
-        for step in range(1, len(train_dataset) + 1):
+        for step in range(1, 11):
             if args.cal and args.cal_start == 1 and epoch == 1 and step == 101:
                 cal_layer.start_reverse_gradient()
 
@@ -345,25 +343,31 @@ def train():
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-            num_per_base = 50
-            if num_gt_box > 4:
-                num_per_base = 200 // num_gt_box
+            num_per_base = 1
 
-            rois = torch.zeros((num_per_base * num_gt_box, 5))
-            cnt = 0
-            for i in range(num_gt_box):
-                here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
-                if here is None:
+            if im_id in cached_rois:
+                rois = cached_rois[im_id].clone()
+                #print('cached')
+            else:
+                rois = torch.zeros((num_per_base * num_gt_box, 5))
+                cnt = 0
+                for i in range(num_gt_box):
+                    here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
+                    if here is None:
+                        continue
+                    rois[cnt:cnt + here.size(0), :] = here
+                    cnt += here.size(0)
+                if cnt == 0:
+                    log_file.write('@@@@ no box @@@@\n')
+                    print('@@@@@ no box @@@@@')
                     continue
-                rois[cnt:cnt + here.size(0), :] = here
-                cnt += here.size(0)
-            if cnt == 0:
-                log_file.write('@@@@ no box @@@@\n')
-                print('@@@@@ no box @@@@@')
-                continue
-            rois = rois[:cnt, :]
-            mean_boxes_per_iter += rois.size(0)
+                rois = rois[:cnt, :]
+                cached_rois[im_id] = rois.clone()
+                #print('not cached')
+
+            #print(rois)
             rois = Variable(rois.cuda())
+            mean_boxes_per_iter += rois.size(0)
             gt_boxes = Variable(gt_boxes.cuda())
             gt_labels = Variable(gt_labels.cuda())
 
@@ -423,7 +427,7 @@ def train():
                 alpha_temp /= effective_iteration
 
                 print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f" %
-                      (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
+                      (args.net, args.session, epoch, step, np.exp(-loss_temp), cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
                 log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f\n" %
                                (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
                 loss_temp = 0
@@ -438,14 +442,14 @@ def train():
                 log_file.write('@@@@@@@nan@@@@@@@@\n')
                 return
 
-        val_loss = validate(UBR, random_box_generator, criterion, val_dataset, val_dataloader)
-        tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset, tval_dataloader)
-        print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
-        log_file.write('[net %s][session %d][epoch %2d] validation loss: %.4f\n' % (args.net, args.session, epoch, val_loss))
-        print('[net %s][session %d][epoch %2d] transfer validation loss: %.4f' % (args.net, args.session, epoch, tval_loss))
-        log_file.write('[net %s][session %d][epoch %2d] transfer validation loss: %.4f\n' % (args.net, args.session, epoch, tval_loss))
-
-        log_file.flush()
+        # val_loss = validate(UBR, random_box_generator, criterion, val_dataset, val_dataloader)
+        # tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset, tval_dataloader)
+        # print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
+        # log_file.write('[net %s][session %d][epoch %2d] validation loss: %.4f\n' % (args.net, args.session, epoch, val_loss))
+        # print('[net %s][session %d][epoch %2d] transfer validation loss: %.4f' % (args.net, args.session, epoch, tval_loss))
+        # log_file.write('[net %s][session %d][epoch %2d] transfer validation loss: %.4f\n' % (args.net, args.session, epoch, tval_loss))
+        #
+        # log_file.flush()
 
         if epoch % args.lr_decay_step == 0:
             adjust_learning_rate(optimizer, args.lr_decay_gamma)

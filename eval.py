@@ -58,10 +58,10 @@ def draw_box(boxes, col=None):
             c = np.random.rand(3)
         else:
             c = col
-        plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
-        plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
-        plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
-        plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
+        plt.hlines(ymin, xmin - 2, xmax + 2, colors=c, lw=4)
+        plt.hlines(ymax, xmin - 2, xmax + 2, colors=c, lw=4)
+        plt.vlines(xmin, ymin - 2, ymax + 2, colors=c, lw=4)
+        plt.vlines(xmax, ymin - 2, ymax + 2, colors=c, lw=4)
 
 
 def preprocess(im, rois):
@@ -120,13 +120,13 @@ if __name__ == '__main__':
     UBR.cuda()
     UBR.eval()
 
-    random_box_generator = UniformIouBoxGenerator()
+    random_box_generator = UniformIouBoxGenerator(seed_pool_size_per_bag=10000, iou_begin=30, iou_end=50)
     fixed_target_result = np.zeros((10, 10))
     variable_target_result = np.zeros((10, 10))
 
     data_iter = iter(dataloader)
     tot_rois = 0
-    for data_idx in range(len(dataset)):
+    for data_idx in range(100):
         im_data, gt_boxes, h, w, im_id = dataset[data_idx]
         gt_boxes[:, 0] *= w
         gt_boxes[:, 1] *= h
@@ -144,6 +144,7 @@ if __name__ == '__main__':
             here = random_box_generator.get_rand_boxes(gt_boxes[i, :], 90, data_height, data_width)
             if here is None:
                 continue
+            here = here[:1, :]
             rois[cnt:cnt + here.size(0), :] = here
             cnt += here.size(0)
 
@@ -152,6 +153,7 @@ if __name__ == '__main__':
             output_file.write('@@@@@ no box @@@@@ %d\n' % data_idx)
             continue
         rois = rois[:cnt, :]
+        print(rois)
         rois = rois.cuda()
         bbox_pred, _ = UBR(im_data, Variable(rois))
         bbox_pred = bbox_pred.data
@@ -166,11 +168,13 @@ if __name__ == '__main__':
         refined_iou = jaccard(refined_boxes, gt_boxes)
         base_max_overlap, base_max_overlap_idx = base_iou.max(1)
         refined_max_overlap, refined_max_overlap_idx = refined_iou.max(1)
-        # plt.imshow(raw_img)
-        # draw_box(rois[:10, 1:] / im_scale)
-        # draw_box(refined_boxes[:10, :] / im_scale, 'yellow')
-        # draw_box(gt_boxes / im_scale, 'black')
-        # plt.show()
+        plt.axis('off')
+
+        plt.imshow(raw_img)
+        draw_box(rois[:10, 1:] / im_scale, 'yellow')
+        draw_box(refined_boxes[:10, :] / im_scale, 'blue')
+        #draw_box(gt_boxes / im_scale, 'black')
+        plt.show()
         for from_th in range(10):
             mask1 = base_max_overlap.gt(from_th * 0.1) * base_max_overlap.le(from_th * 0.1 + 0.1)
             after_iou = refined_iou[range(refined_iou.size(0)), base_max_overlap_idx]
