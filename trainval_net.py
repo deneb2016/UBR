@@ -68,6 +68,8 @@ def parse_args():
 
     parser.add_argument('--rotation', action='store_true')
 
+    parser.add_argument('--no_dropout', action='store_true')
+
     parser.add_argument('--iou_th', type=float, help='iou threshold to use for training')
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
@@ -102,6 +104,8 @@ def parse_args():
     parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                         help='learning rate decay ratio',
                         default=0.1, type=float)
+
+    parser.add_argument('--auto_decay', action='store_true')
 
     # set training session
     parser.add_argument('--s', dest='session',
@@ -239,7 +243,7 @@ def train():
 
     # initilize the network here.
     if args.net == 'UBR_VGG':
-        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze)
+        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
     elif args.net == 'UBR_C4':
         UBR = UBR_C4(args.base_model_path, not args.fc, not args.not_freeze)
     elif args.net == 'UBR_C3':
@@ -279,6 +283,8 @@ def train():
     elif args.optimizer == "sgd":
         optimizer = torch.optim.SGD(params, momentum=0.9)
 
+    patience = 0
+    last_optima = 999
     if args.resume:
         load_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.checksession, args.checkepoch))
         print("loading checkpoint %s" % (load_name))
@@ -286,6 +292,11 @@ def train():
         assert args.net == checkpoint['net']
         args.start_epoch = checkpoint['epoch']
         UBR.load_state_dict(checkpoint['model'])
+        if 'patience' in checkpoint:
+            patience = checkpoint['patience']
+        if 'last_optima' in checkpoint:
+            last_optima = checkpoint['last_optima']
+
         if args.cal:
             cal_layer.load_state_dict(checkpoint['cal_layer'])
         print(checkpoint['optimizer'])
@@ -449,9 +460,20 @@ def train():
 
         log_file.flush()
 
-        if epoch % args.lr_decay_step == 0:
-            adjust_learning_rate(optimizer, args.lr_decay_gamma)
-            lr *= args.lr_decay_gamma
+        if args.auto_decay:
+            if last_optima - val_loss < 0.001:
+                patience += 1
+            if last_optima > val_loss:
+                last_optima = val_loss
+
+            if patience >= 2:
+                adjust_learning_rate(optimizer, args.lr_decay_gamma)
+                lr *= args.lr_decay_gamma
+                patience = 0
+        else:
+            if epoch % args.lr_decay_step == 0:
+                adjust_learning_rate(optimizer, args.lr_decay_gamma)
+                lr *= args.lr_decay_gamma
 
         if epoch % args.save_interval == 0:
             save_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.session, epoch))
@@ -461,6 +483,9 @@ def train():
             checkpoint['epoch'] = epoch + 1
             checkpoint['model'] = UBR.state_dict()
             checkpoint['optimizer'] = optimizer.state_dict()
+            checkpoint['patience'] = patience
+            checkpoint['last_optima'] = last_optima
+
             if args.cal:
                 checkpoint['cal_layer'] = cal_layer.state_dict()
             save_checkpoint(checkpoint, save_name)

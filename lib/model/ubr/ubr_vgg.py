@@ -5,11 +5,12 @@ from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
 class UBR_VGG(nn.Module):
-    def __init__(self, base_model_path=None, pretrained_fc=True, freeze_before_conv3=True):
+    def __init__(self, base_model_path=None, pretrained_fc=True, freeze_before_conv3=True, no_dropout=False):
         super(UBR_VGG, self).__init__()
         self.model_path = base_model_path
         self.use_pretrained_fc = pretrained_fc
         self.freeze_before_conv3 = freeze_before_conv3
+        self.no_dropout = no_dropout
 
     def _init_modules(self):
         vgg = models.vgg16()
@@ -31,16 +32,32 @@ class UBR_VGG(nn.Module):
                 for p in self.base[layer].parameters(): p.requires_grad = False
 
         if self.use_pretrained_fc:
-            self.top = vgg.classifier
+            if self.no_dropout:
+                self.top = nn.Sequential(
+                    vgg.classifier[0],
+                    vgg.classifier[1],
+                    vgg.classifier[3],
+                    vgg.classifier[4]
+                )
+            else:
+                self.top = vgg.classifier
         else:
-            self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7, 4096),
-                nn.ReLU(True),
-                nn.Dropout(),
-                nn.Linear(4096, 4096),
-                nn.ReLU(True),
-                nn.Dropout()
-            )
+            if self.no_dropout:
+                self.top = nn.Sequential(
+                    nn.Linear(512 * 7 * 7, 4096),
+                    nn.ReLU(True),
+                    nn.Linear(4096, 4096),
+                    nn.ReLU(True)
+                )
+            else:
+                self.top = nn.Sequential(
+                    nn.Linear(512 * 7 * 7, 4096),
+                    nn.ReLU(True),
+                    nn.Dropout(),
+                    nn.Linear(4096, 4096),
+                    nn.ReLU(True),
+                    nn.Dropout()
+                )
         self.bbox_pred_layer = nn.Linear(4096, 4)
         self.roi_align = RoIAlignAvg(7, 7, 1.0/16.0)
 

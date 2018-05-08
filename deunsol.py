@@ -236,7 +236,7 @@ def train():
 
     # initilize the network here.
     if args.net == 'UBR_VGG':
-        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze)
+        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, no_dropout=True)
     elif args.net == 'UBR_C4':
         UBR = UBR_C4(args.base_model_path, not args.fc, not args.not_freeze)
     elif args.net == 'UBR_C3':
