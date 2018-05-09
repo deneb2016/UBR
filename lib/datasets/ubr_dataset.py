@@ -10,10 +10,10 @@ import numpy as np
 import cv2
 from scipy.ndimage.interpolation import rotate
 from lib.model.utils.box_utils import to_point_form, to_center_form
-
+from lib.model.utils.augmentations import PhotometricDistort
 
 class COCODataset(data.Dataset):
-    def __init__(self, anno_path, img_path, training, multi_scale=False, rotation=False):
+    def __init__(self, anno_path, img_path, training, multi_scale=False, rotation=False, pd=False):
         print('dataset loading...')
         self._anno = json.load(open(anno_path))
         self._object_set = {}
@@ -22,6 +22,10 @@ class COCODataset(data.Dataset):
         self.multi_scale = multi_scale
         self.rotation = rotation
         self._id_to_index = {}
+        if pd:
+            self.pd = PhotometricDistort()
+        else:
+            self.pd = None
 
         crowd_img = {}
         for i, obj in enumerate(self._anno['annotations']):
@@ -111,6 +115,8 @@ class COCODataset(data.Dataset):
             gt_boxes = to_point_form(rotated_gt_boxes)
 
         im = im.astype(np.float32, copy=False)
+        if self.pd is not None:
+            im = self.pd(im)
         im -= np.array([[[102.9801, 115.9465, 122.7717]]])
         im_shape = im.shape
         im_size_min = np.min(im_shape[0:2])

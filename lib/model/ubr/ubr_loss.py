@@ -386,3 +386,28 @@ class ClassificationAdversarialLoss1(nn.Module):
             print(class_pred)
             print(mached_gt)
         return loss
+
+
+class UBR_ScoreLoss(nn.Module):
+    def __init__(self):
+        super(UBR_ScoreLoss, self).__init__()
+
+    def forward(self, rois, score_pred, gt_box):
+        num_rois = rois.size(0)
+        iou = jaccard(rois, gt_box)
+        max_iou, max_gt_idx = torch.max(iou, 1)
+        score_pred = score_pred.view(num_rois)
+
+        return F.l1_loss(score_pred, max_iou)
+
+
+class UBR_ScoreLossLog(nn.Module):
+    def __init__(self):
+        super(UBR_ScoreLossLog, self).__init__()
+
+    def forward(self, rois, score_pred, gt_box):
+        num_rois = rois.size(0)
+        iou = jaccard(rois, gt_box)
+        max_iou, max_gt_idx = torch.max(iou, 1)
+        score_pred = score_pred.view(num_rois)
+        return F.l1_loss(torch.log(score_pred), torch.log(max_iou))

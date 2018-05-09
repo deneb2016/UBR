@@ -14,15 +14,12 @@ from torch.utils.data.sampler import Sampler
 
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.ubr.ubr_vgg import UBR_VGG
-from lib.model.ubr.ubr_c4 import UBR_C4
-from lib.model.ubr.ubr_c3 import UBR_C3
-from lib.model.ubr.ubr_freeze_conv import UBR_VGG_FREEZE_CONV
+from lib.model.ubr.ubr_score import UBR_SCORE
 
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
 from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator, NaturalUniformBoxGenerator
-from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
+from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss, UBR_ScoreLoss, UBR_ScoreLossLog
 from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
@@ -33,10 +30,10 @@ def parse_args():
     """
     Parse input arguments
     """
-    parser = argparse.ArgumentParser(description='Train a Universal Object Box Regressor')
+    parser = argparse.ArgumentParser(description='Train a ScoreNet')
     parser.add_argument('--net', dest='net',
-                        help='UBR_VGG',
-                        default='UBR_VGG', type=str)
+                        help='UBR_SCORE',
+                        default='UBR_SCORE', type=str)
     parser.add_argument('--start_epoch', dest='start_epoch',
                         help='starting epoch',
                         default=1, type=int)
@@ -68,13 +65,9 @@ def parse_args():
 
     parser.add_argument('--rotation', action='store_true')
 
-    parser.add_argument('--pd', action='store_true')
-
     parser.add_argument('--no_dropout', action='store_true')
 
     parser.add_argument('--iou_th', type=float, help='iou threshold to use for training')
-
-    parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
 
     parser.add_argument('--rand', type=str, default='uniform_box', help='uniform_box or natural_box or uniform_iou')
 
@@ -182,11 +175,10 @@ def validate(model, random_box_generator, criterion, dataset, dataloader):
 
         bbox_pred, _ = model(im_data, rois)
 
-        loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+        loss = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
         if loss is None:
             print('val zero mached')
         else:
-            loss = loss.mean()
             tot_loss += loss.data[0]
             tot_cnt += 1
 
@@ -234,7 +226,7 @@ def train():
         print('@@@@@no dataset@@@@@')
         return
 
-    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd)
+    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale, rotation=args.rotation)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
     val_dataset = COCODataset(args.val_anno, args.val_images, training=False, multi_scale=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
@@ -244,14 +236,8 @@ def train():
     lr = args.lr
 
     # initilize the network here.
-    if args.net == 'UBR_VGG':
-        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
-    elif args.net == 'UBR_C4':
-        UBR = UBR_C4(args.base_model_path, not args.fc, not args.not_freeze)
-    elif args.net == 'UBR_C3':
-        UBR = UBR_C3(args.base_model_path, not args.not_freeze)
-    elif args.net == 'UBR_FREEZE':
-        UBR = UBR_VGG_FREEZE_CONV(args.base_model_path, not args.fc, args.fl)
+    if args.net == 'UBR_SCORE':
+        UBR = UBR_SCORE(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -313,15 +299,12 @@ def train():
 
     UBR.cuda()
 
-    if args.loss == 'smoothl1':
-        criterion = UBR_SmoothL1Loss(args.iou_th)
-    elif args.loss == 'iou':
-        criterion = UBR_IoULoss(args.iou_th)
+    criterion = UBR_ScoreLossLog()
 
     if args.rand == 'uniform_box':
         random_box_generator = UniformBoxGenerator(args.iou_th)
     elif args.rand == 'uniform_iou':
-        random_box_generator = UniformIouBoxGenerator(int(args.iou_th * 100), 95)
+        random_box_generator = UniformIouBoxGenerator(int(args.iou_th * 100), 100)
     elif args.rand == 'natural_box':
         random_box_generator = NaturalBoxGenerator(args.iou_th)
     elif args.rand == 'natural_uniform':
@@ -382,7 +365,7 @@ def train():
             gt_boxes = Variable(gt_boxes.cuda())
             gt_labels = Variable(gt_labels.cuda())
 
-            bbox_pred, shared_feat = UBR(im_data, rois)
+            score_pred, shared_feat = UBR(im_data, rois)
 
 
             #refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
@@ -391,14 +374,13 @@ def train():
             #draw_box(refined_boxes / im_scale, 'yellow')
             #draw_box(gt_boxes.data / im_scale, 'black')
             #plt.show()
-            loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
+            loss = criterion(rois[:, 1:5], score_pred, gt_boxes)
 
             if loss is None:
                 loss_temp = 1000000
                 loss = Variable(torch.zeros(1).cuda())
                 print('zero mached')
 
-            loss = loss.mean()
             loss_temp += loss.data[0]
 
             if args.cal:
@@ -437,9 +419,9 @@ def train():
                 cal_loss_temp /= effective_iteration
                 alpha_temp /= effective_iteration
 
-                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f" %
+                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.5f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f" %
                       (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
-                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f\n" %
+                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.5f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f\n" %
                                (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
                 loss_temp = 0
                 cal_loss_temp = 0
@@ -455,10 +437,10 @@ def train():
 
         val_loss = validate(UBR, random_box_generator, criterion, val_dataset, val_dataloader)
         tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset, tval_dataloader)
-        print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
-        log_file.write('[net %s][session %d][epoch %2d] validation loss: %.4f\n' % (args.net, args.session, epoch, val_loss))
+        print('[net %s][session %d][epoch %2d] validation loss: %.5f' % (args.net, args.session, epoch, val_loss))
+        log_file.write('[net %s][session %d][epoch %2d] validation loss: %.5f\n' % (args.net, args.session, epoch, val_loss))
         print('[net %s][session %d][epoch %2d] transfer validation loss: %.4f' % (args.net, args.session, epoch, tval_loss))
-        log_file.write('[net %s][session %d][epoch %2d] transfer validation loss: %.4f\n' % (args.net, args.session, epoch, tval_loss))
+        log_file.write('[net %s][session %d][epoch %2d] transfer validation loss: %.5f\n' % (args.net, args.session, epoch, tval_loss))
 
         log_file.flush()
 

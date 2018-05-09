@@ -984,11 +984,11 @@
 #             dy += step
 #         dx += step
 
-from scipy.ndimage.interpolation import rotate
-from scipy.misc import imread
-import numpy as np
-from matplotlib import pyplot as plt
-a = imread('/home/seungkwan/000019.jpg')
-a = rotate(a, 270)
-plt.imshow(a)
-plt.show()
+a = open('/home/seungkwan/qwe')
+b = open('/home/seungkwan/ewq', 'w')
+for line in a.readlines():
+    for tok in line.split():
+        if tok.count('@') != 0:
+            continue
+        b.write('%s ' % tok)
+    b.write('\n')
