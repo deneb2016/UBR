@@ -65,6 +65,7 @@ def parse_args():
 
     parser.add_argument('--rotation', action='store_true')
 
+    parser.add_argument('--pd', action='store_true')
     parser.add_argument('--no_dropout', action='store_true')
 
     parser.add_argument('--iou_th', type=float, help='iou threshold to use for training')
@@ -226,7 +227,7 @@ def train():
         print('@@@@@no dataset@@@@@')
         return
 
-    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale, rotation=args.rotation)
+    train_dataset = COCODataset(args.train_anno, args.train_images, training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, num_workers=args.num_workers, shuffle=True)
     val_dataset = COCODataset(args.val_anno, args.val_images, training=False, multi_scale=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
