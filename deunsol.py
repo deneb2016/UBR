@@ -19,7 +19,7 @@ from lib.model.ubr.ubr_c4 import UBR_C4
 from lib.model.ubr.ubr_c3 import UBR_C3
 
 
-from lib.model.utils.box_utils import inverse_transform, jaccard
+from lib.model.utils.box_utils import inverse_transform, jaccard, to_center_form, to_point_form
 from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator, NaturalUniformBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
@@ -35,7 +35,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Universal Object Box Regressor')
     parser.add_argument('--net', dest='net',
                         help='UBR_VGG',
-                        default='UBR_VGG', type=str)
+                        default='DEU', type=str)
     parser.add_argument('--start_epoch', dest='start_epoch',
                         help='starting epoch',
                         default=1, type=int)
@@ -235,15 +235,7 @@ def train():
     lr = args.lr
 
     # initilize the network here.
-    if args.net == 'UBR_VGG':
-        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, no_dropout=True)
-    elif args.net == 'UBR_C4':
-        UBR = UBR_C4(args.base_model_path, not args.fc, not args.not_freeze)
-    elif args.net == 'UBR_C3':
-        UBR = UBR_C3(args.base_model_path, not args.not_freeze)
-    else:
-        print("network is not defined")
-        pdb.set_trace()
+    UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, no_dropout=True)
 
     UBR.create_architecture()
 
@@ -264,7 +256,7 @@ def train():
                 if 'bias' in key:
                     params += [{'params': [value], 'lr': lr * 2, 'weight_decay': 0}]
                 else:
-                    params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
+                    params += [{'params': [value], 'lr': lr, 'weight_decay': 0}]
 
         cal_layer.cuda()
 
@@ -310,6 +302,7 @@ def train():
         random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
 
     cached_rois = {}
+    cached_gt = {}
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
         UBR.train()
@@ -337,13 +330,31 @@ def train():
             im_scale = im_scale[0]
             im_id = im_id[0]
             im_data = Variable(im_data.cuda())
+
+            if im_id in cached_gt:
+                gt_boxes = cached_gt[im_id].clone()
+            else:
+                N = 100
+                cx = torch.FloatTensor(np.random.uniform(0.1, 0.9, N)) * data_width
+                cy = torch.FloatTensor(np.random.uniform(0.1, 0.9, N)) * data_height
+                w = torch.FloatTensor(np.random.uniform(0, 0.5, N)) * data_width
+                h = torch.FloatTensor(np.random.uniform(0, 0.5, N)) * data_height
+                pseudo_boxes = torch.stack([cx, cy, w, h], 1)
+                pseudo_boxes = to_point_form(pseudo_boxes)
+                pseudo_boxes[:, 0].clamp_(min=0, max=data_width)
+                pseudo_boxes[:, 1].clamp_(min=0, max=data_height)
+                pseudo_boxes[:, 2].clamp_(min=0, max=data_width)
+                pseudo_boxes[:, 3].clamp_(min=0, max=data_height)
+                gt_boxes = pseudo_boxes
+                cached_gt[im_id] = gt_boxes.clone()
+
             num_gt_box = gt_boxes.size(0)
             UBR.zero_grad()
 
             # generate random box from given gt box
             # the shape of rois is (n, 5), the first column is not used
             # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-            num_per_base = 1
+            num_per_base = 10
 
             if im_id in cached_rois:
                 rois = cached_rois[im_id].clone()

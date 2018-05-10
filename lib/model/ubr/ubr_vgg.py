@@ -103,5 +103,5 @@ class UBR_VGG(nn.Module):
 
         bbox_pred = bbox_pred.view(-1, 4)
 
-        return bbox_pred, pooled_feat
+        return bbox_pred, pooled_feat.view(-1, 7 * 7 * 512)
 

@@ -23,7 +23,7 @@ from lib.model.ubr.ubr_freeze_conv import UBR_VGG_FREEZE_CONV
 from lib.model.utils.box_utils import inverse_transform, jaccard
 from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator, NaturalUniformBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
-from lib.model.ubr.ubr_loss import UBR_IoULoss, ClassificationAdversarialLoss1
+from lib.model.ubr.ubr_loss import UBR_IoULoss, UniformCrossEntropy
 from lib.datasets.ubr_dataset import COCODataset
 from matplotlib import pyplot as plt
 import random
@@ -94,9 +94,6 @@ def parse_args():
     parser.add_argument('--fl', type=int, default=0)
 
     # config optimization
-    parser.add_argument('--o', dest='optimizer',
-                        help='training optimizer',
-                        default="sgd", type=str)
     parser.add_argument('--lr', dest='lr',
                         help='starting learning rate',
                         default=0.001, type=float)
@@ -267,23 +264,19 @@ def train():
                 params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
 
     if args.cal:
-        cal_layer = ClassificationAdversarialLoss1(args.iou_th, train_dataset.num_classes)
+        cal_layer = UniformCrossEntropy(args.iou_th, shared_feat_dim=4096, num_classes=train_dataset.num_classes)
         cal_layer.init_weights()
 
         for key, value in dict(cal_layer.named_parameters()).items():
             if value.requires_grad:
                 if 'bias' in key:
-                    params += [{'params': [value], 'lr': lr * 2, 'weight_decay': 0}]
+                    params += [{'params': [value], 'lr': 0.01, 'weight_decay': 0}]
                 else:
-                    params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
+                    params += [{'params': [value], 'lr': 0.01, 'weight_decay': 0}]
 
         cal_layer.cuda()
 
-    if args.optimizer == "adam":
-        lr = lr * 0.1
-        optimizer = torch.optim.Adam(params)
-    elif args.optimizer == "sgd":
-        optimizer = torch.optim.SGD(params, momentum=0.9)
+    optimizer = torch.optim.SGD(params, momentum=0.9)
 
     patience = 0
     last_optima = 999
@@ -300,8 +293,7 @@ def train():
             last_optima = checkpoint['last_optima']
 
         if args.cal:
-            cal_layer.load_state_dict(checkpoint['cal_layer'])
-        print(checkpoint['optimizer'])
+            cal_layer.load(checkpoint['cal_layer'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr = optimizer.param_groups[0]['lr']
         print("loaded checkpoint %s" % (load_name))
@@ -337,13 +329,11 @@ def train():
         effective_iteration = 0
         start = time.time()
 
-        if args.cal and epoch >= args.cal_start and epoch > 1:
-            cal_layer.start_reverse_gradient()
+        if args.cal and epoch == args.cal_start:
+            cal_layer.connect = True
 
         data_iter = iter(train_dataloader)
         for step in range(1, len(train_dataset) + 1):
-            if args.cal and args.cal_start == 1 and epoch == 1 and step == 101:
-                cal_layer.start_reverse_gradient()
 
             im_data, gt_boxes, gt_labels, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
             raw_img = raw_img.squeeze().numpy()
@@ -489,7 +479,7 @@ def train():
             checkpoint['last_optima'] = last_optima
 
             if args.cal:
-                checkpoint['cal_layer'] = cal_layer.state_dict()
+                checkpoint['cal_layer'] = cal_layer.save()
             save_checkpoint(checkpoint, save_name)
             print('save model: {}'.format(save_name))
 

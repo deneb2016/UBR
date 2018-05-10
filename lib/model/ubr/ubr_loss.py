@@ -388,6 +388,65 @@ class ClassificationAdversarialLoss1(nn.Module):
         return loss
 
 
+class CALoss(nn.Module):
+    def __init__(self, overlap_threshold, shared_feat_dim=7 * 7 * 512, num_classes=60):
+        super(CALoss, self).__init__()
+        self._overlap_threshold = overlap_threshold
+        self.classifier = nn.Sequential(nn.Linear(shared_feat_dim, 4096),
+                                        nn.ReLU(),
+                                        nn.Linear(4096, 4096),
+                                        nn.ReLU(),
+                                        nn.Linear(4096, num_classes)
+                                        )
+        self.num_classes = num_classes
+        self.connect = False
+
+    def init_weights(self):
+        def normal_init(m, mean, stddev, truncated=False):
+            if truncated:
+                m.weight.data.normal_().fmod_(2).mul_(stddev).add_(mean) # not a perfect approximation
+            else:
+                m.weight.data.normal_(mean, stddev)
+                m.bias.data.zero_()
+        for layer in self.classifier:
+            if hasattr(layer, 'weight'):
+                normal_init(layer, 0, 0.001, False)
+
+    def forward(self, rois, gt_box, shared_feat, gt_labels):
+        if not self.connect:
+            shared_feat = Variable(shared_feat.data.clone())
+
+        class_pred = self.classifier(shared_feat)
+        num_rois = rois.size(0)
+        iou = jaccard(rois, gt_box)
+        max_iou, max_gt_idx = torch.max(iou, 1)
+        mask = max_iou.gt(self._overlap_threshold)
+        if mask.sum().data[0] == 0:
+            return None, None
+
+        class_pred = class_pred[mask.unsqueeze(1).expand(num_rois, self.num_classes)].view(-1, self.num_classes)
+        class_pred = F.log_softmax(class_pred)
+        uniform_loss = -F.log_softmax(class_pred).mean(1)
+        uniform_loss = uniform_loss.mean()
+
+        indices = max_gt_idx[mask]
+        mached_gt = gt_labels[indices]
+        cls_loss = F.cross_entropy(class_pred, mached_gt)
+
+        return uniform_loss, cls_loss
+
+    def save(self):
+        ret = {
+            'weight': self.state_dict(),
+            'connect': self.connect
+        }
+        return ret
+
+    def load(self, state_dict):
+        self.load_state_dict(state_dict['weight'])
+        self.connect = state_dict['connect']
+
+
 class UBR_ScoreLoss(nn.Module):
     def __init__(self):
         super(UBR_ScoreLoss, self).__init__()
