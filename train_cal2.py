@@ -85,7 +85,7 @@ def parse_args():
 
     parser.add_argument('--cal_start', type=int, help='cal start epoch', default=1)
 
-    parser.add_argument('--train_cls_interval', type=int, help='cal start epoch', default=5000)
+    parser.add_argument('--pretrained_cal', action='store_true')
 
     parser.add_argument('--fc', help='do not use pretrained fc', action='store_true')
 
@@ -257,7 +257,10 @@ def train():
                 params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
 
     params2 = []
-    cal_layer = CALoss(args.iou_th, shared_feat_dim=7 * 7 * 512, num_classes=train_dataset.num_classes)
+    if args.pretrained_cal:
+        cal_layer = CALoss(args.iou_th, base_model_path=args.base_model_path, shared_feat_dim=7 * 7 * 512, num_classes=train_dataset.num_classes)
+    else:
+        cal_layer = CALoss(args.iou_th, base_model_path=None, shared_feat_dim=7 * 7 * 512, num_classes=train_dataset.num_classes)
     cal_layer.init_weights()
 
     for key, value in dict(cal_layer.named_parameters()).items():

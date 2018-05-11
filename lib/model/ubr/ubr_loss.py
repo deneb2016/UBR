@@ -388,18 +388,28 @@ class ClassificationAdversarialLoss1(nn.Module):
         return loss
 
 
+import torchvision.models as models
 class CALoss(nn.Module):
-    def __init__(self, overlap_threshold, shared_feat_dim=7 * 7 * 512, num_classes=60):
+    def __init__(self, overlap_threshold, base_model_path=None, shared_feat_dim=7 * 7 * 512, num_classes=60):
         super(CALoss, self).__init__()
         self._overlap_threshold = overlap_threshold
-        self.classifier = nn.Sequential(nn.Linear(shared_feat_dim, 4096),
-                                        nn.ReLU(),
-                                        nn.Linear(4096, 4096),
-                                        nn.ReLU(),
-                                        nn.Linear(4096, num_classes)
-                                        )
         self.num_classes = num_classes
         self.connect = False
+        if base_model_path is None:
+            self.pretrained = False
+            self.classifier = nn.Sequential(nn.Linear(shared_feat_dim, 4096),
+                                            nn.ReLU(),
+                                            nn.Linear(4096, 4096),
+                                            nn.ReLU(),
+                                            nn.Linear(4096, num_classes)
+                                            )
+        else:
+            self.pretrained = True
+            vgg = models.vgg16()
+            print("Loading pretrained weights from %s" % (self.model_path))
+            state_dict = torch.load(self.model_path)
+            vgg.load_state_dict({k: v for k, v in state_dict.items() if k in vgg.state_dict()})
+            self.classifier = nn.Sequential(*list(vgg.classifier._modules.values())[:-1], nn.Linear(4096, num_classes))
 
     def init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
@@ -408,9 +418,13 @@ class CALoss(nn.Module):
             else:
                 m.weight.data.normal_(mean, stddev)
                 m.bias.data.zero_()
-        for layer in self.classifier:
-            if hasattr(layer, 'weight'):
-                normal_init(layer, 0, 0.001, False)
+
+        if self.pretrained:
+            normal_init(self.classifier[-1], 0, 0.001, False)
+        else:
+            for layer in self.classifier:
+                if hasattr(layer, 'weight'):
+                    normal_init(layer, 0, 0.001, False)
 
     def forward(self, rois, gt_box, shared_feat, gt_labels):
         if not self.connect:
