@@ -406,8 +406,8 @@ class CALoss(nn.Module):
         else:
             self.pretrained = True
             vgg = models.vgg16()
-            print("Loading pretrained weights from %s" % (self.model_path))
-            state_dict = torch.load(self.model_path)
+            print("Loading pretrained weights from %s" % (base_model_path))
+            state_dict = torch.load(base_model_path)
             vgg.load_state_dict({k: v for k, v in state_dict.items() if k in vgg.state_dict()})
             self.classifier = nn.Sequential(*list(vgg.classifier._modules.values())[:-1], nn.Linear(4096, num_classes))
 
