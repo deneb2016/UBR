@@ -198,7 +198,7 @@ def train_classifier(model, random_box_generator, cal_layer, dataset, dataloader
     uniform_loss_temp = 0
     effective_iteration = 0
     start = time.time()
-    for step in range(1, 5000):
+    for step in range(1, len(dataset)):
         im_data, gt_boxes, gt_labels, data_height, data_width, im_scale, raw_img, im_id = next(data_iter)
         raw_img = raw_img.squeeze().numpy()
         gt_boxes = gt_boxes[0, :, :]
