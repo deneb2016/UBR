@@ -469,8 +469,7 @@ def train():
             checkpoint['last_optima'] = last_optima
             checkpoint['total_iterations'] = total_iterations
 
-            if args.cal:
-                checkpoint['cal_layer'] = cal_layer.save()
+            checkpoint['cal_layer'] = cal_layer.save()
             save_checkpoint(checkpoint, save_name)
             print('save model: {}'.format(save_name))
 
