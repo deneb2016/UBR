@@ -105,7 +105,7 @@ class UBR_SCORE(nn.Module):
         # compute bbox offset
         score_pred = self.score_pred_layer(shared_feat)
 
-        score_pred = score_pred.view(-1, 1)
+        score_pred = score_pred.view(-1, 2)
 
         score_pred = self.sig(score_pred)
 

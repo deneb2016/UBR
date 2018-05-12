@@ -91,8 +91,11 @@ class UBR_VGG(nn.Module):
 
         return fc7
 
-    def forward(self, im_data, rois):
-        base_feat = self.base(im_data)
+    def forward(self, im_data, rois, conv_feat=None):
+        if conv_feat is None:
+            base_feat = self.base(im_data)
+        else:
+            base_feat = conv_feat
         pooled_feat = self.roi_align(base_feat, rois)
 
         # feed pooled features to top model
@@ -103,5 +106,4 @@ class UBR_VGG(nn.Module):
 
         bbox_pred = bbox_pred.view(-1, 4)
 
-        return bbox_pred, pooled_feat.view(-1, 7 * 7 * 512)
-
+        return bbox_pred, base_feat

@@ -21,7 +21,7 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
     adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.ubr.ubr_vgg import UBR_VGG
+from ubr_wrapper_stop import UBRWrapper
 from lib.model.utils.box_utils import jaccard, inverse_transform
 from lib.model.utils.rand_box_generator import UniformIouBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
@@ -45,7 +45,13 @@ def parse_args():
                         help='number of worker to load data',
                         default=0, type=int)
 
-    parser.add_argument('--model_path', type=str)
+    parser.add_argument('--score_path', type=str, default='../repo/ubr/UBR_SCORE_2_15.pth')
+
+    parser.add_argument('--reg_path', type=str, default='../repo/ubr/UBR_VGG_53000003_9.pth')
+    parser.add_argument('--th',
+                        default=0.5, type=float)
+    parser.add_argument('--max_iter',
+                        default=3, type=int)
 
     args = parser.parse_args()
     return args
@@ -93,54 +99,35 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
-
-    load_name = os.path.abspath(args.model_path)
-    print("loading checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
-
-    # initilize the network here.
-    if checkpoint['net'] == 'UBR_VGG':
-        UBR = UBR_VGG()
-    else:
-        print("network is not defined")
-        pdb.set_trace()
-
-    UBR.create_architecture()
-    UBR.load_state_dict(checkpoint['model'])
-    print("loaded checkpoint %s" % (load_name))
-
-    output_file_name = os.path.join(output_dir, 'eval_{}_{}_{}.txt'.format(checkpoint['net'], checkpoint['session'], checkpoint['epoch'] - 1))
-    output_file = open(output_file_name, 'w')
+    output_file = open('output.txt', 'w')
     output_file.write(str(args))
     output_file.write('\n')
 
-    UBR.cuda()
-    UBR.eval()
+    dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=args.num_workers, shuffle=False)
 
-    random_box_generator = UniformIouBoxGenerator()
+    UBR = UBRWrapper(args.score_path, args.reg_path, args.th, args.max_iter, True)
+
+    random_box_generator = UniformIouBoxGenerator(iou_begin=20, iou_end=60)
     fixed_target_result = np.zeros((10, 10))
     variable_target_result = np.zeros((10, 10))
 
     data_iter = iter(dataloader)
     tot_rois = 0
-    for data_idx in range(len(dataset)):
+    cor_rois = 0
+    for data_idx in range(1000):
         im_data, gt_boxes, h, w, im_id = dataset[data_idx]
         gt_boxes[:, 0] *= w
         gt_boxes[:, 1] *= h
         gt_boxes[:, 2] *= w
         gt_boxes[:, 3] *= h
         gt_boxes = torch.FloatTensor(gt_boxes[:, :4])
-        raw_img = im_data.copy()
-        im_data, gt_boxes, data_height, data_width, im_scale = preprocess(im_data, gt_boxes)
-        im_data = im_data.unsqueeze(0)
-        im_data = Variable(im_data.cuda())
+
         num_gt_box = gt_boxes.size(0)
         rois = torch.zeros((num_gt_box * 90, 5))
         cnt = 0
         for i in range(num_gt_box):
-            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], 90, data_height, data_width)
+            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], 90, h, w)
             if here is None:
                 continue
             rois[cnt:cnt + here.size(0), :] = here
@@ -148,23 +135,16 @@ if __name__ == '__main__':
 
         if cnt == 0:
             print('@@@@@ no box @@@@@', data_idx)
-            output_file.write('@@@@@ no box @@@@@ %d\n' % data_idx)
             continue
+        tot_rois += cnt
         rois = rois[:cnt, :]
-        rois = rois.cuda()
-        bbox_pred, _ = UBR(im_data, Variable(rois))
-        bbox_pred = bbox_pred.data
-        refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
-        refined_boxes[:, 0].clamp_(min=0, max=data_width - 1)
-        refined_boxes[:, 1].clamp_(min=0, max=data_height - 1)
-        refined_boxes[:, 2].clamp_(min=0, max=data_width - 1)
-        refined_boxes[:, 3].clamp_(min=0, max=data_height - 1)
-
-        gt_boxes = gt_boxes.cuda()
+        refined_boxes = UBR.query(im_data, rois[:, 1:].clone().numpy())
+        refined_boxes = torch.FloatTensor(refined_boxes)
         base_iou = jaccard(rois[:, 1:], gt_boxes)
         refined_iou = jaccard(refined_boxes, gt_boxes)
         base_max_overlap, base_max_overlap_idx = base_iou.max(1)
         refined_max_overlap, refined_max_overlap_idx = refined_iou.max(1)
+        cor_rois += refined_max_overlap.gt(0.5).sum()
         # plt.imshow(raw_img)
         # draw_box(rois[:10, 1:] / im_scale)
         # draw_box(refined_boxes[:10, :] / im_scale, 'yellow')
@@ -180,6 +160,8 @@ if __name__ == '__main__':
                 variable_target_result[from_th, to_th] += (mask1 * mask3).sum()
         if data_idx % 100 == 0:
             print(data_idx)
+
+    print(cor_rois / tot_rois)
     output_file.write('@@@@@fixed target result@@@@@\n')
     for i, j in itertools.product(range(10), range(10)):
         if j == 0:

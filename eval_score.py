@@ -1,3 +1,4 @@
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,9 +22,9 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
     adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.ubr.ubr_vgg import UBR_VGG
+from lib.model.ubr.ubr_score import UBR_SCORE
 from lib.model.utils.box_utils import jaccard, inverse_transform
-from lib.model.utils.rand_box_generator import UniformIouBoxGenerator
+from lib.model.utils.rand_box_generator import UniformIouBoxGenerator, NaturalUniformBoxGenerator
 from lib.model.ubr.ubr_loss import UBR_SmoothL1Loss
 from lib.model.ubr.ubr_loss import UBR_IoULoss
 from lib.datasets.ubr_dataset import COCODataset
@@ -37,7 +38,7 @@ def parse_args():
     """
     Parse input arguments
     """
-    parser = argparse.ArgumentParser(description='Evaluate a Universal Object Box Regressor')
+    parser = argparse.ArgumentParser(description='Evaluate UBR_SCORE')
 
     parser.add_argument('--save_dir', dest='save_dir',
                         help='directory to save results', default="../repo/ubr")
@@ -45,7 +46,7 @@ def parse_args():
                         help='number of worker to load data',
                         default=0, type=int)
 
-    parser.add_argument('--model_path', type=str)
+    parser.add_argument('--model_path', type=str, default='../repo/ubr/UBR_SCORE_2_15.pth')
 
     args = parser.parse_args()
     return args
@@ -57,10 +58,10 @@ def draw_box(boxes, col=None):
             c = np.random.rand(3)
         else:
             c = col
-        plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
-        plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
-        plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
-        plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
+        plt.hlines(ymin, xmin - 2, xmax + 2, colors=c, lw=4)
+        plt.hlines(ymax, xmin - 2, xmax + 2, colors=c, lw=4)
+        plt.vlines(xmin, ymin - 2, ymax + 2, colors=c, lw=4)
+        plt.vlines(xmax, ymin - 2, ymax + 2, colors=c, lw=4)
 
 
 def preprocess(im, rois):
@@ -82,6 +83,13 @@ def preprocess(im, rois):
     return data, rois, data_height, data_width, im_scale
 
 
+def box_median(boxes):
+    iou = jaccard(boxes, boxes)
+    val, idx = iou.sum(1).max(0)
+    idx = idx[0]
+    return boxes[idx:idx+1, :]
+
+
 if __name__ == '__main__':
     args = parse_args()
 
@@ -101,8 +109,8 @@ if __name__ == '__main__':
     checkpoint = torch.load(load_name)
 
     # initilize the network here.
-    if checkpoint['net'] == 'UBR_VGG':
-        UBR = UBR_VGG()
+    if checkpoint['net'] == 'UBR_SCORE':
+        UBR = UBR_SCORE()
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -119,13 +127,13 @@ if __name__ == '__main__':
     UBR.cuda()
     UBR.eval()
 
-    random_box_generator = UniformIouBoxGenerator()
-    fixed_target_result = np.zeros((10, 10))
-    variable_target_result = np.zeros((10, 10))
+    random_box_generator = UniformIouBoxGenerator(seed_pool_size_per_bag=10000, iou_begin=30, iou_end=100)
+
+    result = np.zeros((10, 10))
 
     data_iter = iter(dataloader)
-    tot_rois = 0
-    for data_idx in range(len(dataset)):
+
+    for data_idx in range(1000):
         im_data, gt_boxes, h, w, im_id = dataset[data_idx]
         gt_boxes[:, 0] *= w
         gt_boxes[:, 1] *= h
@@ -140,10 +148,10 @@ if __name__ == '__main__':
         rois = torch.zeros((num_gt_box * 90, 5))
         cnt = 0
         for i in range(num_gt_box):
-            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], 90, data_height, data_width)
+            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], 70, data_height, data_width)
             if here is None:
                 continue
-            rois[cnt:cnt + here.size(0), :] = here
+            rois[cnt:cnt + here.size(0), :] = here[:, :]
             cnt += here.size(0)
 
         if cnt == 0:
@@ -152,67 +160,25 @@ if __name__ == '__main__':
             continue
         rois = rois[:cnt, :]
         rois = rois.cuda()
-        bbox_pred, _ = UBR(im_data, Variable(rois))
-        bbox_pred = bbox_pred.data
-        refined_boxes = inverse_transform(rois[:, 1:], bbox_pred)
-        refined_boxes[:, 0].clamp_(min=0, max=data_width - 1)
-        refined_boxes[:, 1].clamp_(min=0, max=data_height - 1)
-        refined_boxes[:, 2].clamp_(min=0, max=data_width - 1)
-        refined_boxes[:, 3].clamp_(min=0, max=data_height - 1)
+        score_pred, _ = UBR(im_data, Variable(rois))
+        score_pred = score_pred.data.squeeze()
 
         gt_boxes = gt_boxes.cuda()
         base_iou = jaccard(rois[:, 1:], gt_boxes)
-        refined_iou = jaccard(refined_boxes, gt_boxes)
         base_max_overlap, base_max_overlap_idx = base_iou.max(1)
-        refined_max_overlap, refined_max_overlap_idx = refined_iou.max(1)
-        # plt.imshow(raw_img)
-        # draw_box(rois[:10, 1:] / im_scale)
-        # draw_box(refined_boxes[:10, :] / im_scale, 'yellow')
-        # draw_box(gt_boxes / im_scale, 'black')
-        # plt.show()
+
         for from_th in range(10):
             mask1 = base_max_overlap.gt(from_th * 0.1) * base_max_overlap.le(from_th * 0.1 + 0.1)
-            after_iou = refined_iou[range(refined_iou.size(0)), base_max_overlap_idx]
             for to_th in range(10):
-                mask2 = after_iou.gt(to_th * 0.1) * after_iou.le(to_th * 0.1 + 0.1)
-                mask3 = refined_max_overlap.gt(to_th * 0.1) * refined_max_overlap.le(to_th * 0.1 + 0.1)
-                fixed_target_result[from_th, to_th] += (mask1 * mask2).sum()
-                variable_target_result[from_th, to_th] += (mask1 * mask3).sum()
+                mask2 = score_pred.gt(to_th * 0.1) * score_pred.le(to_th * 0.1 + 0.1)
+                result[from_th, to_th] += (mask1 * mask2).sum()
         if data_idx % 100 == 0:
             print(data_idx)
-    output_file.write('@@@@@fixed target result@@@@@\n')
-    for i, j in itertools.product(range(10), range(10)):
-        if j == 0:
-            output_file.write('\n')
-        output_file.write('%.4f\t' % fixed_target_result[i, j])
 
-    output_file.write('\n')
+    for from_th in range(10):
+        for to_th in range(10):
+            print('%f\t' % result[from_th, to_th], end='')
+            output_file.write('%f\t' % result[from_th, to_th])
+        print('')
+        output_file.write('\n')
 
-    for i, j in itertools.product(range(10), range(10)):
-        if j == 0:
-            output_file.write('\n')
-        if fixed_target_result[i, :].sum() == 0:
-            output_file.write('   0\t')
-        else:
-            output_file.write('%.4f\t' % (float(fixed_target_result[i, j]) / float(fixed_target_result[i, :].sum())))
-    output_file.write('\n')
-
-    output_file.write('@@@@@variable target result@@@@@\n')
-    for i, j in itertools.product(range(10), range(10)):
-        if j == 0:
-            output_file.write('\n')
-
-        output_file.write('%.4f\t' % variable_target_result[i, j])
-
-    output_file.write('\n')
-
-    for i, j in itertools.product(range(10), range(10)):
-        if j == 0:
-            output_file.write('\n')
-        if variable_target_result[i, :].sum() == 0:
-            output_file.write('   0\t')
-        else:
-            output_file.write('%.4f\t' % (float(variable_target_result[i, j]) / float(variable_target_result[i, :].sum())))
-    output_file.write('\n')
-
-    output_file.close()
