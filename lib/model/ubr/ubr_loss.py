@@ -488,12 +488,33 @@ class UBR_ScoreLossLog(nn.Module):
 
 class UBR_DecoupledScoreLossLog(nn.Module):
     def __init__(self):
-        super(UBR_ScoreLossLog, self).__init__()
+        super(UBR_DecoupledScoreLossLog, self).__init__()
 
     def forward(self, rois, score_pred, gt_box):
         num_rois = rois.size(0)
         iou = jaccard(rois, gt_box)
+        #print(iou)
         max_iou, max_gt_idx = torch.max(iou, 1)
-        score_pred = score_pred.view(num_rois)
-        return F.l1_loss(torch.log(score_pred), torch.log(max_iou))
+        mached_gt = gt_box[max_gt_idx]
+        roi_area = (rois[:, 2] - rois[:, 0]) * (rois[:, 3] - rois[:, 1])
+        gt_area = (mached_gt[:, 2] - mached_gt[:, 0]) * (mached_gt[:, 3] - mached_gt[:, 1]) / roi_area
+        inter_area = self._intersect(rois, mached_gt) / roi_area
+        return F.l1_loss(torch.log(score_pred[:, 0]), torch.log(gt_area)) + F.l1_loss(torch.log(score_pred[:, 1]), torch.log(inter_area))
 
+    def _intersect(self, box_a, box_b):
+        """ We resize both tensors to [A,B,2] without new malloc:
+        [A,2] -> [A,1,2] -> [A,B,2]
+        [B,2] -> [1,B,2] -> [A,B,2]
+        Then we compute the area of intersect between box_a and box_b.
+        Args:
+          box_a: (tensor) bounding boxes, Shape: [A,4].
+          box_b: (tensor) bounding boxes, Shape: [B,4].
+        Return:
+          (tensor) intersection area, Shape: [A,B].
+        """
+        A = box_a.size(0)
+        B = box_b.size(0)
+        max_xy = torch.min(box_a[:, 2:], box_b[:, 2:])
+        min_xy = torch.max(box_a[:, :2], box_b[:, :2])
+        inter = torch.clamp((max_xy - min_xy), min=0)
+        return inter[:, 0] * inter[:, 1]

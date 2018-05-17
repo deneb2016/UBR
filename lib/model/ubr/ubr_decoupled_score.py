@@ -4,9 +4,9 @@ import torch.nn as nn
 from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
-class UBR_SCORE(nn.Module):
+class UBR_DSCORE(nn.Module):
     def __init__(self, base_model_path=None, pretrained_fc=True, freeze_before_conv3=True, no_dropout=False):
-        super(UBR_SCORE, self).__init__()
+        super(UBR_DSCORE, self).__init__()
         self.model_path = base_model_path
         self.use_pretrained_fc = pretrained_fc
         self.freeze_before_conv3 = freeze_before_conv3
@@ -59,7 +59,7 @@ class UBR_SCORE(nn.Module):
                     nn.ReLU(True),
                     nn.Dropout()
                 )
-        self.score_pred_layer = nn.Linear(4096, 1)
+        self.score_pred_layer = nn.Linear(4096, 2)
         self.roi_align = RoIAlignAvg(7, 7, 1.0/16.0)
 
     def _init_weights(self):
