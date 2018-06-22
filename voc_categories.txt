@@ -1,20 +1,20 @@
-person
-bicycle
-car
-motorcycle
 airplane
-bus
-train
-boat
+bicycle
 bird
+boat
+bottle
+bus
+car
 cat
+chair
+cow
+dining table
 dog
 horse
-sheep
-cow
-bottle
-chair
-couch
+motorcycle
+person
 potted plant
-dining table
+sheep
+couch
+train
 tv

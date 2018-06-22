@@ -46,15 +46,27 @@ class UBRWrapper:
     # raw_img = h * y * 3 rgb image
     # bbox = n * 4 bounding boxes
     # return n * 4 refined boxes
-    def query(self, raw_img, bbox):
+    def query(self, raw_img, bbox, iter_cnt=1):
         data, rois, im_scale = preprocess(raw_img, bbox)
         new_rois = torch.zeros((bbox.shape[0], 5)).cuda()
         new_rois[:, 1:] = rois[:, :]
         rois = new_rois
         data = Variable(data.unsqueeze(0).cuda())
         rois = Variable(rois)
-        bbox_pred = self.UBR(data, rois)
+        bbox_pred, base_feat = self.UBR(data, rois)
         refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
+        for i in range(1, iter_cnt):
+            refined_boxes[:, 0].clamp_(min=0, max=data.size(3) - 1)
+            refined_boxes[:, 1].clamp_(min=0, max=data.size(2) - 1)
+            refined_boxes[:, 2].clamp_(min=0, max=data.size(3) - 1)
+            refined_boxes[:, 3].clamp_(min=0, max=data.size(2) - 1)
+
+            rois = torch.zeros((bbox.shape[0], 5)).cuda()
+            rois[:, 1:] = refined_boxes[:, :]
+            rois = Variable(rois)
+            bbox_pred, base_feat = self.UBR(data, rois)
+            refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
+
         refined_boxes /= im_scale
         ret = torch.zeros((refined_boxes.size(0), 4)).cuda()
         ret[:, 0] = refined_boxes[:, 0].clamp(min=0, max=raw_img.shape[1] - 1)

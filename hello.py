@@ -984,11 +984,3 @@
 #             dy += step
 #         dx += step
 
-a = open('/home/seungkwan/qwe')
-b = open('/home/seungkwan/ewq', 'w')
-for line in a.readlines():
-    for tok in line.split():
-        if tok.count('@') != 0:
-            continue
-        b.write('%s ' % tok)
-    b.write('\n')

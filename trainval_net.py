@@ -15,9 +15,6 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
-from lib.model.ubr.ubr_c4 import UBR_C4
-from lib.model.ubr.ubr_c3 import UBR_C3
-from lib.model.ubr.ubr_freeze_conv import UBR_VGG_FREEZE_CONV
 
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
@@ -72,26 +69,13 @@ def parse_args():
 
     parser.add_argument('--no_dropout', action='store_true')
 
-    parser.add_argument('--iou_th', type=float, help='iou threshold to use for training')
+    parser.add_argument('--iou_th', default=0.5, type=float, help='iou threshold to use for training')
 
     parser.add_argument('--loss', type=str, default='iou', help='loss function (iou or smoothl1)')
-
-    parser.add_argument('--rand', type=str, default='natural_uniform', help='uniform_box or natural_box or uniform_iou')
-
-    parser.add_argument('--cal', help='use class adversarial  or net', action='store_true')
-
-    parser.add_argument('--alpha', type=float, help='alpha for class adversarial loss', default=0.0)
-    # resume trained model
-    parser.add_argument('--static_alpha',
-                        action='store_true')
-
-    parser.add_argument('--cal_start', type=int, help='cal start epoch', default=1)
 
     parser.add_argument('--fc', help='do not use pretrained fc', action='store_true')
 
     parser.add_argument('--not_freeze', help='do not freeze before conv3', action='store_true')
-
-    parser.add_argument('--fl', type=int, default=0)
 
     # config optimization
     parser.add_argument('--lr', dest='lr',
@@ -196,9 +180,9 @@ def train():
 
     print('Called with args:')
     print(args)
-    np.random.seed(3)
-    torch.manual_seed(2016)
-    torch.cuda.manual_seed(1085)
+    np.random.seed(4)
+    torch.manual_seed(2017)
+    torch.cuda.manual_seed(1086)
 
     output_dir = args.save_dir
     if not os.path.exists(output_dir):
@@ -208,25 +192,6 @@ def train():
         args.train_anno = './data/coco/annotations/coco60_train_21413_61353.json'
         args.val_anno = './data/coco/annotations/coco60_val_900_2575.json'
         args.tval_anno = './data/coco/annotations/voc20_val_740_2844.json'
-
-    elif args.dataset == 'coco60_10000_20000':
-        args.train_anno = './data/coco/annotations/instances_train2017_coco60classes_10000_20000.json'
-        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_1000_2000.json'
-    elif args.dataset == 'coco40_10000_20000':
-        args.train_anno = './data/coco/annotations/instances_train2017_coco40classes_10000_20000.json'
-        args.val_anno = './data/coco/annotations/instances_val2017_coco40classes_1000_2000.json'
-    elif args.dataset == 'coco20_10000_20000':
-        args.train_anno = './data/coco/annotations/instances_train2017_coco20classes_10000_20000.json'
-        args.val_anno = './data/coco/annotations/instances_val2017_coco20classes_1000_2000.json'
-    elif args.dataset == 'voc20_10000_20000':
-        args.train_anno = './data/coco/annotations/instances_train2017_voc20classes_10000_20000.json'
-        args.val_anno = './data/coco/annotations/instances_val2017_voc20classes_1000_2000.json'
-    elif args.dataset == 'coco_max':
-        args.train_anno = './data/coco/annotations/instances_train2017_coco60classes_90577_294383.json'
-        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_3801_12484.json'
-    elif args.dataset == 'coco_original':
-        args.train_anno = './data/coco/annotations/instances_train2014_subtract_voc.json'
-        args.val_anno = './data/coco/annotations/instances_val2017_coco60classes_3801_12484.json'
     else:
         print('@@@@@no dataset@@@@@')
         return
@@ -240,15 +205,8 @@ def train():
 
     lr = args.lr
 
-    # initilize the network here.
     if args.net == 'UBR_VGG':
         UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
-    elif args.net == 'UBR_C4':
-        UBR = UBR_C4(args.base_model_path, not args.fc, not args.not_freeze)
-    elif args.net == 'UBR_C3':
-        UBR = UBR_C3(args.base_model_path, not args.not_freeze)
-    elif args.net == 'UBR_FREEZE':
-        UBR = UBR_VGG_FREEZE_CONV(args.base_model_path, not args.fc, args.fl)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -262,19 +220,6 @@ def train():
                 params += [{'params': [value], 'lr': lr * 2, 'weight_decay': 0}]
             else:
                 params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
-
-    if args.cal:
-        cal_layer = UniformCrossEntropy(args.iou_th, shared_feat_dim=4096, num_classes=train_dataset.num_classes)
-        cal_layer.init_weights()
-
-        for key, value in dict(cal_layer.named_parameters()).items():
-            if value.requires_grad:
-                if 'bias' in key:
-                    params += [{'params': [value], 'lr': 0.01, 'weight_decay': 0}]
-                else:
-                    params += [{'params': [value], 'lr': 0.01, 'weight_decay': 0}]
-
-        cal_layer.cuda()
 
     optimizer = torch.optim.SGD(params, momentum=0.9)
 
@@ -291,9 +236,6 @@ def train():
             patience = checkpoint['patience']
         if 'last_optima' in checkpoint:
             last_optima = checkpoint['last_optima']
-
-        if args.cal:
-            cal_layer.load(checkpoint['cal_layer'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr = optimizer.param_groups[0]['lr']
         print("loaded checkpoint %s" % (load_name))
@@ -310,27 +252,16 @@ def train():
     elif args.loss == 'iou':
         criterion = UBR_IoULoss(args.iou_th)
 
-    if args.rand == 'uniform_box':
-        random_box_generator = UniformBoxGenerator(args.iou_th)
-    elif args.rand == 'uniform_iou':
-        random_box_generator = UniformIouBoxGenerator(int(args.iou_th * 100), 95)
-    elif args.rand == 'natural_box':
-        random_box_generator = NaturalBoxGenerator(args.iou_th)
-    elif args.rand == 'natural_uniform':
-        random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
+    random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
         UBR.train()
         loss_temp = 0
-        cal_loss_temp = 0
         alpha_temp = 0
         mean_boxes_per_iter = 0
         effective_iteration = 0
         start = time.time()
-
-        if args.cal and epoch == args.cal_start:
-            cal_layer.connect = True
 
         data_iter = iter(train_dataloader)
         for step in range(1, len(train_dataset) + 1):
@@ -391,31 +322,11 @@ def train():
             loss = loss.mean()
             loss_temp += loss.data[0]
 
-            if args.cal:
-                cal_loss = cal_layer(rois[:, 1:5], gt_boxes, shared_feat, gt_labels)
-                if args.static_alpha:
-                    effective_alpha = args.alpha
-                else:
-                    effective_alpha = (loss.data[0] / cal_loss.data[0]) * args.alpha
-                alpha_temp += effective_alpha
-                cal_loss *= effective_alpha
-                if cal_loss is None:
-                    cal_loss = Variable(torch.zeros(1).cuda())
-                loss = loss + cal_loss
-                cal_loss_temp += cal_loss.data[0]
-
             # backward
             optimizer.zero_grad()
 
             loss.backward()
-
-            if args.cal and cal_layer.reverse:
-                clip_gradient([UBR, cal_layer], 10.)
-            elif args.cal:
-                clip_gradient([UBR], 10.0)
-                clip_gradient([cal_layer], 5.)
-            else:
-                clip_gradient([UBR], 10.0)
+            clip_gradient([UBR], 10.0)
 
             optimizer.step()
             effective_iteration += 1
@@ -424,15 +335,13 @@ def train():
                 end = time.time()
                 loss_temp /= effective_iteration
                 mean_boxes_per_iter /= effective_iteration
-                cal_loss_temp /= effective_iteration
                 alpha_temp /= effective_iteration
 
-                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f" %
-                      (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
-                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, cal: %.3f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f\n" %
-                               (args.net, args.session, epoch, step, loss_temp, cal_loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
+                print("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f" %
+                      (args.net, args.session, epoch, step, loss_temp,  lr, alpha_temp, end - start, mean_boxes_per_iter))
+                log_file.write("[net %s][session %d][epoch %2d][iter %4d] loss: %.4f, lr: %.2e, alpha: %.3f, time: %f, boxes: %.1f\n" %
+                               (args.net, args.session, epoch, step, loss_temp, lr, alpha_temp, end - start, mean_boxes_per_iter))
                 loss_temp = 0
-                cal_loss_temp = 0
                 alpha_temp = 0
                 effective_iteration = 0
                 mean_boxes_per_iter = 0
@@ -478,8 +387,6 @@ def train():
             checkpoint['patience'] = patience
             checkpoint['last_optima'] = last_optima
 
-            if args.cal:
-                checkpoint['cal_layer'] = cal_layer.save()
             save_checkpoint(checkpoint, save_name)
             print('save model: {}'.format(save_name))
 

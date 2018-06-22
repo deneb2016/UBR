@@ -146,5 +146,17 @@ class COCODataset(data.Dataset):
         #print(data, gt_boxes, data_height, data_width, im_scale, raw_img)
         return data, gt_boxes, box_categories, data_height, data_width, im_scale, raw_img, here['id']
 
+    def get_raw_data(self, index):
+        here = self._image_set[index]
+        im = imread(here['img_full_path'])
+        gt_boxes = here['object_set'].copy()
+        if len(im.shape) == 2:
+            im = im[:, :, np.newaxis]
+            im = np.concatenate((im, im, im), axis=2)
+
+        gt_boxes = gt_boxes[:, :4]
+
+        return im, gt_boxes, im.shape[0], im.shape[1], here['id']
+
     def __len__(self):
         return len(self._image_set)
