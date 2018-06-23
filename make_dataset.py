@@ -46,30 +46,19 @@ def remove_nontarget_categories(image_set, object_set, include_categories):
     return tmp_img_set, tmp_obj_set
 
 
-def reindex_objects(object_set, id_to_index):
-    for obj in object_set:
-        obj['category_id'] = id_to_index[obj['category_id']]
-
-
 np.random.seed(1085)
-anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_val2017.json'))
+anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_train2017.json'))
 
 want_classes = [line.rstrip() for line in open('coco60_categories.txt')]
-include_categories = []
+include_categories = {}
 id_to_index = {}
 obj_cnt = [0 for i in range(100)]
 
-for i, name in enumerate(want_classes):
-    flag = False
-    for c in anno['categories']:
-        if c['name'] == name:
-            id_to_index[c['id']] = i + 20
-            print(c['name'], i + 20)
-            flag = True
-            break
-    assert flag
-
-include_categories = [i in id_to_index for i in range(91)]
+for c in anno['categories']:
+    if c['name'] in want_classes:
+        include_categories[c['id']] = True
+    else:
+        include_categories[c['id']] = False
 
 new_categories = []
 object_set = anno['annotations']
@@ -84,8 +73,6 @@ image_set, object_set = remove_crowd_images(image_set, object_set)
 print("After crowd removing, there are %d images and %d objects" % (len(image_set), len(object_set)))
 image_set, object_set = remove_nontarget_categories(image_set, object_set, include_categories)
 print('For selected categories, there are %d images and %d objects' % (len(image_set), len(object_set)))
-reindex_objects(object_set, id_to_index)
-print('object reindexing complete')
 
 new_anno = dict()
 new_anno['info'] = anno['info']
@@ -96,4 +83,4 @@ new_anno['annotations'] = object_set
 NUM_IMAGES = len(new_anno['images'])
 NUM_BOXES = len(new_anno['annotations'])
 print(len(new_anno['images']), len(new_anno['annotations']))
-json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/coco60_val_reindex_%d_%d.json' % (NUM_IMAGES, NUM_BOXES), 'w'))
+json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/coco60_train_%d_%d.json' % (NUM_IMAGES, NUM_BOXES), 'w'))
