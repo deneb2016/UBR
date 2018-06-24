@@ -170,7 +170,7 @@ def train():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    train_dataset = TDetDataset(['voc07_trainval'], training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd)
+    train_dataset = TDetDataset(['voc07_trainval'], training=False)
     val_dataset = TDetDataset(['coco60_val'], training=False)
     tval_dataset = TDetDataset(['coco_voc_val'], training=False)
 

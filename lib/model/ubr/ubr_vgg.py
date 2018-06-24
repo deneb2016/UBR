@@ -84,22 +84,15 @@ class UBR_VGG(nn.Module):
         self._init_modules()
         self._init_weights()
 
-    def _head_to_tail(self, pool5):
-
-        pool5_flat = pool5.view(pool5.size(0), -1)
-        fc7 = self.top(pool5_flat)
-
-        return fc7
-
     def forward(self, im_data, rois, conv_feat=None):
         if conv_feat is None:
             base_feat = self.base(im_data)
         else:
             base_feat = conv_feat
-        pooled_feat = self.roi_align(base_feat, rois)
+        pooled_feat = self.roi_align(base_feat, rois).view(rois.size(0), -1)
 
         # feed pooled features to top model
-        shared_feat = self._head_to_tail(pooled_feat)
+        shared_feat = self.top(pooled_feat)
 
         # compute bbox offset
         bbox_pred = self.bbox_pred_layer(shared_feat)
@@ -107,3 +100,27 @@ class UBR_VGG(nn.Module):
         bbox_pred = bbox_pred.view(-1, 4)
 
         return bbox_pred, base_feat
+
+    def get_conv_feat(self, im_data):
+        base_feat = self.base(im_data)
+        return base_feat
+
+    def get_pooled_feat(self, im_data, rois, conv_feat=None):
+        if conv_feat is None:
+            base_feat = self.base(im_data)
+        else:
+            base_feat = conv_feat
+        pooled_feat = self.roi_align(base_feat, rois)
+
+        return pooled_feat.view(rois.size(0), -1)
+
+    def forward_with_pooled_feat(self, pooled_feat):
+        # feed pooled features to top model
+        shared_feat = self.top(pooled_feat)
+
+        # compute bbox offset
+        bbox_pred = self.bbox_pred_layer(shared_feat)
+
+        bbox_pred = bbox_pred.view(-1, 4)
+
+        return bbox_pred

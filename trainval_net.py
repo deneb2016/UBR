@@ -24,6 +24,7 @@ from lib.model.ubr.ubr_loss import UBR_IoULoss
 from lib.datasets.tdet_dataset import TDetDataset
 from matplotlib import pyplot as plt
 import random
+import torch.nn.functional as F
 import math
 
 def parse_args():
@@ -236,7 +237,7 @@ def train():
         # setting to train mode
         UBR.train()
         loss_temp = 0
-        mean_boxes_per_iter = 0
+
         effective_iteration = 0
         start = time.time()
 

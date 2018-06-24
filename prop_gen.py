@@ -2,12 +2,11 @@ from lib.voc_data import VOCDetection
 from matplotlib import pyplot as plt
 import numpy as np
 import math
-from cubr_wrapper import CUBRWrapper
 from ubr_wrapper import  UBRWrapper
 import time
 from lib.model.utils.box_utils import jaccard
 aspect_ratios = [0.5, 0.66, 1.0, 1.5, 2.0]
-achor_sizes = [50, 100, 200, 300, 400]
+achor_sizes = [30, 50, 100, 200, 300, 400]
 
 
 def generate_anchor_boxes(im_height, im_width):
@@ -62,22 +61,23 @@ def discovery_object(img, num_prop, edge_iou_th=0.5, nms_iou=0.7, num_refine=0):
 
     iou = jaccard(refined_boxes, refined_boxes)
     degree = (iou * iou.gt(edge_iou_th).float()).sum(1)
-    #degree = iou.gt(0.5).float().sum(1)
+    #degree = degree / torch.log(rand_boxes[:, 4])
+    #degree = iou.gt(edge_iou_th).float().sum(1)
     #degree = torch.exp(iou).sum(1)
     #degree = iou.sum(1)
     #degree = iou.gt(0.6).float().sum(1) / rand_boxes[:, 4]
-    degree *= (1 / degree.max())
+    degree = degree * (1 / degree.max())
     ret = []
     while True:
         val, here = degree.max(0)
         if val[0] < 0 or len(ret) == num_prop:
             break
         here = here[0]
-        dead_mask = (iou[here, :] > nms_iou) * (degree != -1)
+        dead_mask = (iou[here, :] > nms_iou)
         degree[dead_mask] = -1
-        #degree[dead_mask] = torch.exp(-((iou[here, :][dead_mask] * iou[here, :][dead_mask]) * (1 / 0.6))) * degree[dead_mask]
-        #degree[dead_mask] = (1 - iou[here, :][dead_mask]) * degree[dead_mask]
-        degree[here] = -1
+        #mean_box = torch.mean(refined_boxes[torch.nonzero(dead_mask).squeeze()], 0)
+
+        #ret.append(mean_box.cpu().numpy())
         ret.append(refined_boxes[here, :].cpu().numpy())
 
     ret = np.array(ret)
@@ -114,7 +114,7 @@ np.random.seed(1000)
 
 perm = np.random.permutation(len(dataset))
 
-K = 10
+K = args.K
 pos_cnt = np.array([0 for i in range(K)])
 recall = np.array([0 for i in range(K)])
 tot_gt = 0
