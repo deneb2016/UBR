@@ -99,7 +99,8 @@ def parse_args():
     parser.add_argument('--prop_dir', type=str, default="../repo/proposals/VOC07_trainval_ubr64523_10_0.5_0.6_2/")
     parser.add_argument('--K', default=1, type=int)
     parser.add_argument('--max_iter', default=10000, type=int)
-
+    parser.add_argument('--alpha',
+                        default=0.01, type=float)
 
     args = parser.parse_args()
     return args
@@ -332,7 +333,7 @@ def train():
         iou_loss = iou_loss.mean()
         #iou_loss.backward()
 
-        loss = lossG * 0.1 + iou_loss
+        loss = lossG * args.alpha + iou_loss
         loss.backward()
         clip_gradient([UBR], 10.0)
         optimizerG.step()
