@@ -323,15 +323,17 @@ def train():
         output = D(tar_feat)
         label_real = Variable(torch.ones(output.size()).cuda())
         lossG = F.binary_cross_entropy_with_logits(output, label_real)
-        lossG.backward()
+        #lossG.backward()
 
         # train UBR
         bbox_pred = UBR.forward_with_pooled_feat(src_feat)
         src_gt_boxes = Variable(src_gt_boxes.cuda())
         iou_loss, num_selected_rois, num_rois, refined_rois = criterion(src_rois[:, 1:5], bbox_pred, src_gt_boxes)
         iou_loss = iou_loss.mean()
-        iou_loss.backward()
+        #iou_loss.backward()
 
+        loss = lossG * 0.1 + iou_loss
+        loss.backward()
         clip_gradient([UBR], 10.0)
         optimizerG.step()
         ##############################################################################################
