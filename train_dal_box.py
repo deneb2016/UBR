@@ -289,7 +289,7 @@ def train():
         # train D with real
         optimizerD.zero_grad()
         src_im_data = Variable(src_im_data.unsqueeze(0).cuda())
-        src_feat = source_model.get_pooled_feat(src_im_data, src_rois)
+        src_feat = source_model.get_final_feat(src_im_data, src_rois)
         if args.tanh:
             src_feat = F.tanh(src_feat)
         output_real = D(src_feat.detach())
@@ -299,7 +299,7 @@ def train():
 
         # train D with fake
         tar_im_data = Variable(tar_im_data.unsqueeze(0).cuda())
-        tar_feat = target_model.get_pooled_feat(tar_im_data, tar_rois)
+        tar_feat = target_model.get_final_feat(tar_im_data, tar_rois)
         if args.tanh:
             tar_feat = F.tanh(tar_feat)
         output_fake = D(tar_feat.detach())
@@ -321,7 +321,8 @@ def train():
         lossG = F.binary_cross_entropy_with_logits(output, label_real)
         lossG.backward()
         clip_gradient([target_model], 10.0)
-        optimizerG.step()
+        if step > 3000:
+            optimizerG.step()
         ##############################################################################################
 
         effective_iteration += 1

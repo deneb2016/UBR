@@ -15,7 +15,7 @@ from torch.utils.data.sampler import Sampler
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
-
+from lib.model.ubr.ubr_tanh import UBR_TANH
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
 from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator, NaturalUniformBoxGenerator
@@ -186,6 +186,13 @@ def train():
 
     if args.net == 'UBR_VGG':
         UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+    elif args.net == 'UBR_TANH0':
+        UBR = UBR_TANH(0, args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+    elif args.net == 'UBR_TANH1':
+        UBR = UBR_TANH(1, args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+    elif args.net == 'UBR_TANH2':
+        UBR = UBR_TANH(2, args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -241,6 +248,7 @@ def train():
         effective_iteration = 0
         start = time.time()
 
+        mean_boxes_per_iter = 0
         rand_perm = np.random.permutation(len(train_dataset))
         for step in range(1, len(train_dataset) + 1):
             index = rand_perm[step - 1]

@@ -4,13 +4,14 @@ import torch.nn as nn
 from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
-class UBR_VGG(nn.Module):
-    def __init__(self, base_model_path=None, pretrained_fc=True, freeze_before_conv3=True, no_dropout=False):
-        super(UBR_VGG, self).__init__()
+class UBR_TANH(nn.Module):
+    def __init__(self, tan_layer=0, base_model_path=None, pretrained_fc=True, freeze_before_conv3=True, no_dropout=False):
+        super(UBR_TANH, self).__init__()
         self.model_path = base_model_path
         self.use_pretrained_fc = pretrained_fc
         self.freeze_before_conv3 = freeze_before_conv3
         self.no_dropout = no_dropout
+        self.tan_layer = tan_layer
 
     def _init_modules(self):
         vgg = models.vgg16()
@@ -24,7 +25,7 @@ class UBR_VGG(nn.Module):
         vgg.classifier = nn.Sequential(*list(vgg.classifier._modules.values())[:-1])
 
         # not using the last maxpool layer
-        self.base = nn.Sequential(*list(vgg.features._modules.values())[:-1])
+        self.base = nn.Sequential(*list(vgg.features._modules.values())[:-2])
 
         # Fix the layers before conv3:
         if self.freeze_before_conv3:
@@ -32,34 +33,16 @@ class UBR_VGG(nn.Module):
                 for p in self.base[layer].parameters(): p.requires_grad = False
 
         if self.use_pretrained_fc:
-            if self.no_dropout:
-                self.top = nn.Sequential(
-                    vgg.classifier[0],
-                    vgg.classifier[1],
-                    vgg.classifier[3],
-                    vgg.classifier[4]
-                )
-            else:
-                self.top = vgg.classifier
+            self.fc1 = vgg.classifier[0]
+            self.fc2 = vgg.classifier[3]
         else:
-            if self.no_dropout:
-                self.top = nn.Sequential(
-                    nn.Linear(512 * 7 * 7, 4096),
-                    nn.ReLU(True),
-                    nn.Linear(4096, 4096),
-                    nn.ReLU(True)
-                )
-            else:
-                self.top = nn.Sequential(
-                    nn.Linear(512 * 7 * 7, 4096),
-                    nn.ReLU(True),
-                    nn.Dropout(),
-                    nn.Linear(4096, 4096),
-                    nn.ReLU(True),
-                    nn.Dropout()
-                )
+            self.fc1 = nn.Linear(512 * 7 * 7, 4096)
+            self.fc2 = nn.Linear(4096, 4096)
+
         self.bbox_pred_layer = nn.Linear(4096, 4)
         self.roi_align = RoIAlignAvg(7, 7, 1.0/16.0)
+        self.relu = nn.ReLU(True)
+        self.tanh = nn.Tanh()
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
@@ -76,26 +59,38 @@ class UBR_VGG(nn.Module):
 
         normal_init(self.bbox_pred_layer, 0, 0.001, False)
         if not self.use_pretrained_fc:
-            for layer in self.top:
-                if hasattr(layer, 'weight'):
-                    normal_init(layer, 0, 0.001, False)
+            normal_init(self.fc1, 0, 0.001, False)
+            normal_init(self.fc2, 0, 0.001, False)
 
     def create_architecture(self):
         self._init_modules()
         self._init_weights()
 
-    def forward(self, im_data, rois, conv_feat=None):
-        if conv_feat is None:
-            base_feat = self.base(im_data)
-        else:
-            base_feat = conv_feat
+    def pool_and_top(self, base_feat, rois):
         pooled_feat = self.roi_align(base_feat, rois).view(rois.size(0), -1)
 
-        # feed pooled features to top model
-        shared_feat = self.top(pooled_feat)
+        pooled_feat = self.fc1(pooled_feat)
+        if self.tan_layer == 1:
+            pooled_feat = self.tanh(pooled_feat)
+        else:
+            pooled_feat = self.relu(pooled_feat)
 
-        # compute bbox offset
-        bbox_pred = self.bbox_pred_layer(shared_feat)
+        pooled_feat = self.fc2(pooled_feat)
+        if self.tan_layer == 2:
+            pooled_feat = self.tanh(pooled_feat)
+        else:
+            pooled_feat = self.relu(pooled_feat)
+
+        return pooled_feat
+
+    def forward(self, im_data, rois, conv_feat=None):
+        if conv_feat is None:
+            base_feat = self.get_conv_feat(im_data)
+        else:
+            base_feat = conv_feat
+
+        pooled_feat = self.pool_and_top(base_feat, rois)
+        bbox_pred = self.bbox_pred_layer(pooled_feat)
 
         bbox_pred = bbox_pred.view(-1, 4)
 
@@ -103,34 +98,17 @@ class UBR_VGG(nn.Module):
 
     def get_conv_feat(self, im_data):
         base_feat = self.base(im_data)
+        if self.tan_layer == 0:
+            base_feat = self.tanh(base_feat)
+        else:
+            base_feat = self.relu(base_feat)
         return base_feat
 
     def get_pooled_feat(self, im_data, rois, conv_feat=None):
         if conv_feat is None:
-            base_feat = self.base(im_data)
+            base_feat = self.get_conv_feat(im_data)
         else:
             base_feat = conv_feat
-        pooled_feat = self.roi_align(base_feat, rois)
+        pooled_feat = self.pool_and_top(base_feat, rois)
 
         return pooled_feat.view(rois.size(0), -1)
-
-    def get_final_feat(self, im_data, rois, conv_feat=None):
-        if conv_feat is None:
-            base_feat = self.base(im_data)
-        else:
-            base_feat = conv_feat
-        pooled_feat = self.roi_align(base_feat, rois).view(rois.size(0), -1)
-        final_feat = self.top(pooled_feat)
-
-        return final_feat
-
-    def forward_with_pooled_feat(self, pooled_feat):
-        # feed pooled features to top model
-        shared_feat = self.top(pooled_feat)
-
-        # compute bbox offset
-        bbox_pred = self.bbox_pred_layer(shared_feat)
-
-        bbox_pred = bbox_pred.view(-1, 4)
-
-        return bbox_pred
