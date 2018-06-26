@@ -14,7 +14,7 @@ from torch.utils.data.sampler import Sampler
 
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.ubr.ubr_vgg import UBR_VGG
+from lib.model.ubr.ubr_tanh import UBR_TANH
 
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('--net', dest='net',
                         help='UBR_DAL',
                         default='UBR_DAL', type=str)
-    parser.add_argument('--max_iter', default=10000, type=int)
+    parser.add_argument('--max_iter', default=20000, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=1000, type=int)
@@ -91,9 +91,10 @@ def parse_args():
                         default=1, type=int)
 
     # set domain adaptation parameter
-    parser.add_argument('--pretrained_model', type=str, default="../repo/ubr/UBR_VGG_100003_12.pth")
+    parser.add_argument('--pretrained_model', type=str, default="../repo/ubr/UBR_TANH0_200000_18.pth")
     parser.add_argument('--prop_dir', type=str, default="../repo/proposals/VOC07_trainval_ubr64523_10_0.5_0.6_2/")
     parser.add_argument('--K', default=1, type=int)
+    parser.add_argument('--dim', default=25088, type=int)
 
     args = parser.parse_args()
     return args
@@ -179,9 +180,19 @@ def train():
 
     lr = args.lr
 
-    source_model = UBR_VGG(None, not args.fc, not args.not_freeze, args.no_dropout)
-    target_model = UBR_VGG(None, not args.fc, not args.not_freeze, args.no_dropout)
-    D = BoxDiscriminator()
+    if args.net == 'UBR_TANH0':
+        source_model = UBR_TANH(0, None, not args.fc, not args.not_freeze, args.no_dropout)
+        target_model = UBR_TANH(0, None, not args.fc, not args.not_freeze, args.no_dropout)
+    elif args.net == 'UBR_TANH1':
+        source_model = UBR_TANH(1, None, not args.fc, not args.not_freeze, args.no_dropout)
+        target_model = UBR_TANH(1, None, not args.fc, not args.not_freeze, args.no_dropout)
+    elif args.net == 'UBR_TANH2':
+        source_model = UBR_TANH(2, None, not args.fc, not args.not_freeze, args.no_dropout)
+        target_model = UBR_TANH(2, None, not args.fc, not args.not_freeze, args.no_dropout)
+    else:
+        print("network is not defined")
+        pdb.set_trace()
+    D = BoxDiscriminator(args.dim)
 
     source_model.create_architecture()
     target_model.create_architecture()
@@ -208,7 +219,7 @@ def train():
     load_name = args.pretrained_model
     print("loading checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
-    assert checkpoint['net'] == 'UBR_VGG'
+    assert checkpoint['net'] == args.net
     source_model.load_state_dict(checkpoint['model'])
     target_model.load_state_dict(checkpoint['model'])
     print("loaded checkpoint %s" % (load_name))
@@ -289,7 +300,7 @@ def train():
         # train D with real
         optimizerD.zero_grad()
         src_im_data = Variable(src_im_data.unsqueeze(0).cuda())
-        src_feat = source_model.get_final_feat(src_im_data, src_rois)
+        src_feat = source_model.get_tanh_feat(src_im_data, src_rois)
         if args.tanh:
             src_feat = F.tanh(src_feat)
         output_real = D(src_feat.detach())
@@ -299,7 +310,7 @@ def train():
 
         # train D with fake
         tar_im_data = Variable(tar_im_data.unsqueeze(0).cuda())
-        tar_feat = target_model.get_final_feat(tar_im_data, tar_rois)
+        tar_feat = target_model.get_tanh_feat(tar_im_data, tar_rois)
         if args.tanh:
             tar_feat = F.tanh(tar_feat)
         output_fake = D(tar_feat.detach())

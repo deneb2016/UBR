@@ -104,11 +104,26 @@ class UBR_TANH(nn.Module):
             base_feat = self.relu(base_feat)
         return base_feat
 
-    def get_pooled_feat(self, im_data, rois, conv_feat=None):
+    def get_tanh_feat(self, im_data, rois, conv_feat=None):
         if conv_feat is None:
             base_feat = self.get_conv_feat(im_data)
         else:
             base_feat = conv_feat
-        pooled_feat = self.pool_and_top(base_feat, rois)
 
-        return pooled_feat.view(rois.size(0), -1)
+        pooled_feat = self.roi_align(base_feat, rois).view(rois.size(0), -1)
+        if self.tan_layer == 0:
+            return pooled_feat
+
+        pooled_feat = self.fc1(pooled_feat)
+        if self.tan_layer == 1:
+            pooled_feat = self.tanh(pooled_feat)
+            return pooled_feat
+
+        pooled_feat = self.relu(pooled_feat)
+        pooled_feat = self.fc2(pooled_feat)
+        if self.tan_layer == 2:
+            pooled_feat = self.tanh(pooled_feat)
+        else:
+            pooled_feat = self.relu(pooled_feat)
+
+        return pooled_feat

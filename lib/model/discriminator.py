@@ -25,9 +25,9 @@ class Discriminator(nn.Module):
 
 
 class BoxDiscriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, in_dim):
         super(BoxDiscriminator, self).__init__()
-        self.fc1 = nn.Linear(4096, 4096)
+        self.fc1 = nn.Linear(in_dim, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, 1)
         self.relu = nn.LeakyReLU()
