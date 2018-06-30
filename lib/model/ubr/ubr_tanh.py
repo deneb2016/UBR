@@ -127,3 +127,15 @@ class UBR_TANH(nn.Module):
             pooled_feat = self.relu(pooled_feat)
 
         return pooled_feat
+
+    def forward_with_tanh_feat(self, tanh_feat):
+        if self.tan_layer == 0:
+            tanh_feat = self.fc1(tanh_feat)
+            tanh_feat = self.relu(tanh_feat)
+
+        if self.tan_layer <= 1:
+            tanh_feat = self.fc2(tanh_feat)
+            tanh_feat = self.relu(tanh_feat)
+
+        tanh_feat = self.bbox_pred_layer(tanh_feat)
+        return tanh_feat

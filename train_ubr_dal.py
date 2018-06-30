@@ -247,6 +247,27 @@ def train():
         src_im_data, src_gt_boxes, _, _, src_im_scale, src_raw_img, src_im_id, _ = source_train_dataset[src_idx]
         tar_im_data, tar_gt_boxes, _, _, tar_im_scale, tar_raw_img, tar_im_id, _ = target_train_dataset[tar_idx]
 
+        # generate random box from given gt box
+        # the shape of rois is (n, 5), the first column is not used
+        # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
+        num_src_gt = src_gt_boxes.size(0)
+        num_per_base = 60 / num_src_gt
+        rois = torch.zeros((num_per_base * num_sr, 5))
+        cnt = 0
+        for i in range(num_gt_box):
+            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
+            if here is None:
+                continue
+            rois[cnt:cnt + here.size(0), :] = here
+            cnt += here.size(0)
+        if cnt == 0:
+            log_file.write('@@@@ no box @@@@\n')
+            print('@@@@@ no box @@@@@')
+            continue
+        rois = rois[:cnt, :]
+        mean_boxes_per_iter += rois.size(0)
+        rois = Variable(rois.cuda())
+
 
         ##############################################################################################
         # train D with real
