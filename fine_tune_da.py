@@ -315,7 +315,7 @@ def train():
         src_feat = UBR.get_tanh_feat(src_im_data, src_rois)
         output_real = D(src_feat.detach())
         label_real = Variable(torch.ones(output_real.size()).cuda())
-        loss_real = F.binary_cross_entropy_with_logits(output_real, label_real)
+        loss_real = F.binary_cross_entropy_with_logits(output_real, label_real) * args.alpha
         loss_real.backward()
 
         # train D with fake
@@ -323,7 +323,7 @@ def train():
         tar_feat = UBR.get_tanh_feat(tar_im_data, tar_rois)
         output_fake = D(tar_feat.detach())
         label_fake = Variable(torch.zeros(output_fake.size()).cuda())
-        loss_fake = F.binary_cross_entropy_with_logits(output_fake, label_fake)
+        loss_fake = F.binary_cross_entropy_with_logits(output_fake, label_fake) * args.alpha
         loss_fake.backward()
 
         lossD_real_temp += loss_real.data[0]
