@@ -9,14 +9,60 @@ from lib.datasets.coco_loader import COCOLoader
 from lib.datasets.voc_loader import VOCLoader
 from lib.model.utils.augmentations import PhotometricDistort
 from lib.model.utils.box_utils import to_point_form, to_center_form
+from skimage.transform import PiecewiseAffineTransform, warp
+
+
+def make_transform(image, boxes):
+    height, width = image.shape[0], image.shape[1]
+
+    rand_pivot = []
+    jittered_pivot = []
+    box_pivot = []
+    for box in boxes:
+        w = box[2] - box[0]
+        h = box[3] - box[1]
+        cx = box[0] + w / 2
+        cy = box[1] + h / 2
+        K = 6
+        alpha = 0.2
+
+        for i in range(K):
+            angle = i * np.pi * 2 / K
+            x = np.cos(angle) * (1 - alpha * 2)
+            y = np.sin(angle) * (1 - alpha * 2)
+            rand_pivot.append([cx + x * w / 2, cy + y * h / 2])
+            jit = np.random.uniform(0.5, 1.5)
+
+            jx = cx + x * jit * w / 2
+            jy = cy + y * jit * h / 2
+            jx = np.clip(jx, box[0], box[2])
+            jy = np.clip(jy, box[1], box[3])
+            jittered_pivot.append([jx, jy])
+
+        box_pivot.append([box[0], box[1]])
+        box_pivot.append([box[0], box[3]])
+        box_pivot.append([box[2], box[1]])
+        box_pivot.append([box[2], box[3]])
+
+    rand_pivot = np.array(rand_pivot)
+    jittered_pivot = np.array(jittered_pivot)
+    jittered_pivot[:, 0] = np.clip(jittered_pivot[:, 0], a_min=0, a_max=width)
+    jittered_pivot[:, 1] = np.clip(jittered_pivot[:, 1], a_min=0, a_max=height)
+
+    box_pivot = np.array(box_pivot)
+    img_pivot = np.array([[0, 0], [width - 1, 0], [0, height - 1], [width -1, height - 1]])
+    src = np.vstack([img_pivot, rand_pivot, box_pivot])
+    dst = np.vstack([img_pivot, jittered_pivot, box_pivot])
+    return src, dst
 
 
 class TDetDataset(data.Dataset):
-    def __init__(self, dataset_names, training, multi_scale=False, rotation=False, pd=False):
+    def __init__(self, dataset_names, training, multi_scale=False, rotation=False, pd=False, warping=False):
         self.training = training
         self.multi_scale = multi_scale
         self.rotation = rotation
         self._id_to_index = {}
+        self.warping = warping
         if pd:
             self.pd = PhotometricDistort()
         else:
@@ -42,6 +88,13 @@ class TDetDataset(data.Dataset):
         im, gt_boxes, gt_categories, id, loader_index = self.get_raw_data(index)
         raw_img = im.copy()
 
+        if self.warping and np.random.rand() > 0.8:
+            src, dst = make_transform(im, gt_boxes)
+            tform = PiecewiseAffineTransform()
+            tform.estimate(src, dst)
+            im = warp(im, tform, output_shape=(im.shape[0], im.shape[1]))
+            raw_img = im.copy()
+
         # rgb -> bgr
         im = im[:, :, ::-1]
 
@@ -55,7 +108,7 @@ class TDetDataset(data.Dataset):
             flipped_gt_boxes[:, 2] = im.shape[1] - gt_boxes[:, 0]
             gt_boxes = flipped_gt_boxes
 
-        if self.rotation:
+        if self.training and self.rotation:
             gt_boxes = to_center_form(gt_boxes)
             rotated_gt_boxes = gt_boxes.copy()
             h, w = im.shape[0], im.shape[1]

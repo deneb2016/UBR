@@ -61,6 +61,7 @@ def parse_args():
     parser.add_argument('--rotation', action='store_true')
 
     parser.add_argument('--pd', action='store_true')
+    parser.add_argument('--warping', action='store_true')
 
     parser.add_argument('--no_dropout', action='store_true')
 
@@ -181,7 +182,7 @@ def train():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    train_dataset = TDetDataset(['coco60_train'], training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd)
+    train_dataset = TDetDataset(['coco60_train'], training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd, warping=args.warping)
     val_dataset = TDetDataset(['coco60_val'], training=False)
     tval_dataset = TDetDataset(['coco_voc_val'], training=False)
 
@@ -232,7 +233,7 @@ def train():
         print("loaded checkpoint %s" % (load_name))
 
     log_file_name = os.path.join(output_dir, 'log_{}_{}.txt'.format(args.net, args.session))
-    log_file = open(log_file_name, 'w')
+    log_file = open(log_file_name, 'a')
     log_file.write(str(args))
     log_file.write('\n')
 
