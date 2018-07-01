@@ -32,14 +32,14 @@ class UBR_AUG(nn.Module):
 
         if self.no_dropout:
             self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7 + 1, 4096),
+                nn.Linear(512 * 7 * 7 + 3, 4096),
                 nn.ReLU(True),
                 nn.Linear(4096, 4096),
                 nn.ReLU(True)
             )
         else:
             self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7 + 1, 4096),
+                nn.Linear(512 * 7 * 7 + 3, 4096),
                 nn.ReLU(True),
                 nn.Dropout(),
                 nn.Linear(4096, 4096),
@@ -48,6 +48,16 @@ class UBR_AUG(nn.Module):
             )
         self.bbox_pred_layer = nn.Linear(4096, 4)
         self.roi_align = RoIAlignAvg(7, 7, 1.0/16.0)
+
+        self.aug_fc = nn.Sequential(
+            nn.Linear(3, 10),
+            nn.ReLU(),
+            nn.Linear(10, 10),
+            nn.ReLU(),
+            nn.Linear(10, 10),
+            nn.ReLU()
+        )
+
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
@@ -67,6 +77,10 @@ class UBR_AUG(nn.Module):
             if hasattr(layer, 'weight'):
                 normal_init(layer, 0, 0.001, False)
 
+        for layer in self.aug_fc:
+            if hasattr(layer, 'weight'):
+                normal_init(layer, 0, 0.001, False)
+
     def create_architecture(self):
         self._init_modules()
         self._init_weights()
@@ -77,14 +91,23 @@ class UBR_AUG(nn.Module):
         ratio = torch.log(w) - torch.log(h)
         return ratio
 
+    def calc_aug_data(self, boxes, im_width, im_height):
+        w = boxes[:, 2] - boxes[:, 0]
+        h = boxes[:, 3] - boxes[:, 1]
+        lar = torch.log(w) - torch.log(h)
+        w = w / im_width - 0.5
+        h = h / im_height - 0.5
+        feat = torch.cat([lar.view(boxes.size(0), 1), w.view(boxes.size(0), 1), h.view(boxes.size(0), 1)], 1)
+        return self.aug_fc(feat)
+
     def forward(self, im_data, rois, conv_feat=None):
         if conv_feat is None:
             base_feat = self.base(im_data)
         else:
             base_feat = conv_feat
         pooled_feat = self.roi_align(base_feat, rois).view(rois.size(0), -1)
-        lar = self.calc_log_aspect_ratio(rois[:, 1:])
-        aug_feat = torch.cat([pooled_feat, lar.view(rois.size(0), 1)], 1)
+        box_feat = self.calc_aug_data(rois[:, 1:], im_data.size(2), im_data.size(1))
+        aug_feat = torch.cat([pooled_feat, box_feat], 1)
 
         # feed pooled features to top model
         shared_feat = self.top(aug_feat)

@@ -99,7 +99,7 @@ def parse_args():
     parser.add_argument('--pretrained_model', type=str, default="../repo/ubr/UBR_TANH0_200000_18.pth")
     parser.add_argument('--dim', default=25088, type=int)
 
-    parser.add_argument('--max_iter', default=10000, type=int)
+    parser.add_argument('--max_iter', default=30000, type=int)
     parser.add_argument('--alpha',
                         default=1.0, type=float)
 
@@ -202,7 +202,7 @@ def train():
         print("network is not defined")
         pdb.set_trace()
 
-    D = BoxDiscriminator(25088)
+    D = BoxDiscriminator(args.dim)
 
     UBR.create_architecture()
 
@@ -212,7 +212,7 @@ def train():
             if 'bias' in key:
                 paramsG += [{'params': [value], 'lr': lr * 2, 'weight_decay': 0}]
             else:
-                paramsG += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
+                paramsG += [{'params': [value], 'lr': lr, 'weight_decay': 0}]
 
     paramsD = []
     for key, value in dict(D.named_parameters()).items():
@@ -220,7 +220,7 @@ def train():
             if 'bias' in key:
                 paramsD += [{'params': [value], 'lr': lr * 2, 'weight_decay': 0}]
             else:
-                paramsD += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
+                paramsD += [{'params': [value], 'lr': lr, 'weight_decay': 0}]
 
     if args.optim == 'sgd':
         optimizerG = torch.optim.SGD(paramsG, momentum=0.9)
