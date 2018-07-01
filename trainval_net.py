@@ -72,6 +72,8 @@ def parse_args():
 
     parser.add_argument('--not_freeze', help='do not freeze before conv3', action='store_true')
 
+    parser.add_argument('--aug_pre',  action='store_true')
+
     # config optimization
     parser.add_argument('--lr', dest='lr',
                         help='starting learning rate',
@@ -188,7 +190,7 @@ def train():
     if args.net == 'UBR_VGG':
         UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
     elif args.net == 'UBR_AUG':
-        UBR = UBR_AUG(args.base_model_path, no_dropout=args.no_dropout)
+        UBR = UBR_AUG(args.aug_pre, args.base_model_path, no_dropout=args.no_dropout)
     elif args.net == 'UBR_TANH0':
         UBR = UBR_TANH(0, args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
     elif args.net == 'UBR_TANH1':

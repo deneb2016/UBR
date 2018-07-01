@@ -5,11 +5,15 @@ from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 
 
 class UBR_AUG(nn.Module):
-    def __init__(self, base_model_path=None, freeze_before_conv3=True, no_dropout=False):
+    def __init__(self, box_preprocess, base_model_path=None, freeze_before_conv3=True, no_dropout=False):
         super(UBR_AUG, self).__init__()
         self.model_path = base_model_path
         self.freeze_before_conv3 = freeze_before_conv3
         self.no_dropout = no_dropout
+        self.box_preprocess = box_preprocess
+        self.aug_dim = 3
+        if box_preprocess:
+            self.aug_dim = 10
 
     def _init_modules(self):
         vgg = models.vgg16()
@@ -32,14 +36,14 @@ class UBR_AUG(nn.Module):
 
         if self.no_dropout:
             self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7 + 10, 4096),
+                nn.Linear(512 * 7 * 7 + self.aug_dim, 4096),
                 nn.ReLU(True),
                 nn.Linear(4096, 4096),
                 nn.ReLU(True)
             )
         else:
             self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7 + 10, 4096),
+                nn.Linear(512 * 7 * 7 + self.aug_dim, 4096),
                 nn.ReLU(True),
                 nn.Dropout(),
                 nn.Linear(4096, 4096),
@@ -98,7 +102,10 @@ class UBR_AUG(nn.Module):
         w = w / im_width - 0.5
         h = h / im_height - 0.5
         feat = torch.cat([lar.view(boxes.size(0), 1), w.view(boxes.size(0), 1), h.view(boxes.size(0), 1)], 1)
-        return self.aug_fc(feat)
+        if self.box_preprocess:
+            return self.aug_fc(feat)
+        else:
+            return feat
 
     def forward(self, im_data, rois, conv_feat=None):
         if conv_feat is None:
@@ -106,7 +113,7 @@ class UBR_AUG(nn.Module):
         else:
             base_feat = conv_feat
         pooled_feat = self.roi_align(base_feat, rois).view(rois.size(0), -1)
-        box_feat = self.calc_aug_data(rois[:, 1:], im_data.size(2), im_data.size(1))
+        box_feat = self.calc_aug_data(rois[:, 1:], im_data.size(3), im_data.size(2))
         aug_feat = torch.cat([pooled_feat, box_feat], 1)
 
         # feed pooled features to top model
