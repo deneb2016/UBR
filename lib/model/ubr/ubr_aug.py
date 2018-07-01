@@ -32,14 +32,14 @@ class UBR_AUG(nn.Module):
 
         if self.no_dropout:
             self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7 + 3, 4096),
+                nn.Linear(512 * 7 * 7 + 10, 4096),
                 nn.ReLU(True),
                 nn.Linear(4096, 4096),
                 nn.ReLU(True)
             )
         else:
             self.top = nn.Sequential(
-                nn.Linear(512 * 7 * 7 + 3, 4096),
+                nn.Linear(512 * 7 * 7 + 10, 4096),
                 nn.ReLU(True),
                 nn.Dropout(),
                 nn.Linear(4096, 4096),
