@@ -17,6 +17,8 @@ from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, cli
 from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.ubr.ubr_aug import UBR_AUG
 from lib.model.ubr.ubr_tanh import UBR_TANH
+from lib.model.ubr.ubr_res import UBR_RES
+
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
 from lib.model.utils.rand_box_generator import UniformBoxGenerator, UniformIouBoxGenerator, NaturalBoxGenerator, NaturalUniformBoxGenerator
@@ -103,7 +105,7 @@ def parse_args():
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load model',
                         default=1, type=int)
-    parser.add_argument('--base_model_path', default = 'data/pretrained_model/vgg16_caffe.pth')
+    parser.add_argument('--base_model_path', default = 'data/pretrained_model/resnet101_caffe.pth')
 
     args = parser.parse_args()
     return args
@@ -190,6 +192,8 @@ def train():
 
     if args.net == 'UBR_VGG':
         UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+    elif args.net == 'UBR_RES':
+        UBR = UBR_RES(args.base_model_path, 1, not args.fc)
     elif args.net == 'UBR_AUG':
         UBR = UBR_AUG(args.aug_pre, args.base_model_path, no_dropout=args.no_dropout)
     elif args.net == 'UBR_TANH0':
@@ -233,7 +237,10 @@ def train():
         print("loaded checkpoint %s" % (load_name))
 
     log_file_name = os.path.join(output_dir, 'log_{}_{}.txt'.format(args.net, args.session))
-    log_file = open(log_file_name, 'a')
+    if args.resume:
+        log_file = open(log_file_name, 'a')
+    else:
+        log_file = open(log_file_name, 'w')
     log_file.write(str(args))
     log_file.write('\n')
 
