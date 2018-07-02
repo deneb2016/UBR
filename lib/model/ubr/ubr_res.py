@@ -264,9 +264,9 @@ class UBR_RES(nn.Module):
         return bbox_pred, base_feat
 
 
-class UBR_RES_FC(nn.Module):
+class UBR_RES_FC3(nn.Module):
     def __init__(self, base_model_path=None, fixed_blocks=1):
-        super(UBR_RES_FC, self).__init__()
+        super(UBR_RES_FC3, self).__init__()
         self.model_path = base_model_path
         self.dout_base_model = 1024
         self.fixed_blocks = fixed_blocks
@@ -374,9 +374,9 @@ class UBR_RES_FC(nn.Module):
         return bbox_pred, base_feat
 
 
-class UBR_RES_CONV_FC(nn.Module):
+class UBR_RES_FC2(nn.Module):
     def __init__(self, base_model_path=None, fixed_blocks=1):
-        super(UBR_RES_CONV_FC, self).__init__()
+        super(UBR_RES_FC2, self).__init__()
         self.model_path = base_model_path
         self.dout_base_model = 1024
         self.fixed_blocks = fixed_blocks
@@ -392,14 +392,8 @@ class UBR_RES_CONV_FC(nn.Module):
 
         # not using the last maxpool layer
         self.base = nn.Sequential(res.conv1, res.bn1, res.relu, res.maxpool, res.layer1, res.layer2, res.layer3)
-        self.extra_conv = nn.Sequential(
-            nn.Conv2d(1024, 512, (1, 1)),
-            nn.ReLU(True)
-        )
         self.top = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),
-            nn.ReLU(True),
-            nn.Linear(4096, 4096),
+            nn.Linear(1024 * 7 * 7, 4096),
             nn.ReLU(True)
         )
 
@@ -465,9 +459,6 @@ class UBR_RES_CONV_FC(nn.Module):
         for m in self.top:
             if hasattr(m, 'weight'):
                 normal_init(m, 0, 0.001, False)
-        for m in self.extra_conv:
-            if hasattr(m, 'weight'):
-                normal_init(m, 0, 0.001, False)
 
     def create_architecture(self):
         self._init_modules()
@@ -479,7 +470,6 @@ class UBR_RES_CONV_FC(nn.Module):
         else:
             base_feat = conv_feat
         pooled_feat = self.roi_align(base_feat, rois.view(-1, 5))
-        pooled_feat = self.extra_conv(pooled_feat)
         # feed pooled features to top model
         shared_feat = self.top(pooled_feat.view(rois.size(0), -1))
 
