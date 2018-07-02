@@ -232,7 +232,8 @@ class UBR_RES(nn.Module):
                 m.weight.data.normal_().fmod_(2).mul_(stddev).add_(mean)  # not a perfect approximation
             else:
                 m.weight.data.normal_(mean, stddev)
-                m.bias.data.zero_()
+                if m.bias is not None:
+                    m.bias.data.zero_()
 
         normal_init(self.bbox_pred_layer, 0, 0.001, False)
         if not self.pretrained_top:
