@@ -393,11 +393,11 @@ class UBR_RES_CONV_FC(nn.Module):
         # not using the last maxpool layer
         self.base = nn.Sequential(res.conv1, res.bn1, res.relu, res.maxpool, res.layer1, res.layer2, res.layer3)
         self.extra_conv = nn.Sequential(
-            nn.Conv2d(1024, 1024, (3, 3)),
+            nn.Conv2d(1024, 512, (1, 1)),
             nn.ReLU(True)
         )
         self.top = nn.Sequential(
-            nn.Linear(1024 * 5 * 5, 4096),
+            nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
             nn.Linear(4096, 4096),
             nn.ReLU(True)
