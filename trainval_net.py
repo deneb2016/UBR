@@ -17,7 +17,7 @@ from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, cli
 from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.ubr.ubr_aug import UBR_AUG
 from lib.model.ubr.ubr_tanh import UBR_TANH
-from lib.model.ubr.ubr_res import UBR_RES
+from lib.model.ubr.ubr_res import UBR_RES, UBR_RES_FC, UBR_RES_CONV_FC
 
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
@@ -194,6 +194,10 @@ def train():
         UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
     elif args.net == 'UBR_RES':
         UBR = UBR_RES(args.base_model_path, 1, not args.fc)
+    elif args.net == 'UBR_RES_FC':
+        UBR = UBR_RES_FC(args.base_model_path, 1)
+    elif args.net == 'UBR_RES_CONV_FC':
+        UBR = UBR_RES_CONV_FC(args.base_model_path, 1)
     elif args.net == 'UBR_AUG':
         UBR = UBR_AUG(args.aug_pre, args.base_model_path, no_dropout=args.no_dropout)
     elif args.net == 'UBR_TANH0':
