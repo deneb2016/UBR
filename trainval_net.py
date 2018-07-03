@@ -107,7 +107,6 @@ def parse_args():
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load model',
                         default=1, type=int)
-    parser.add_argument('--base_model_path', default = 'data/pretrained_model/resnet101_caffe.pth')
 
     args = parser.parse_args()
     return args
@@ -192,26 +191,16 @@ def train():
 
     lr = args.lr
 
+    res_path = 'data/pretrained_model/resnet101_caffe.pth'
+    vgg_path = 'data/pretrained_model/vgg16_caffe.pth'
     if args.net == 'UBR_VGG':
-        UBR = UBR_VGG(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+        UBR = UBR_VGG(vgg_path, not args.fc, not args.not_freeze, args.no_dropout)
     elif args.net == 'UBR_RES':
-        UBR = UBR_RES(args.base_model_path, 1, not args.fc)
+        UBR = UBR_RES(res_path, 1, not args.fc)
     elif args.net == 'UBR_RES_FC2':
-        UBR = UBR_RES_FC2(args.base_model_path, 1)
+        UBR = UBR_RES_FC2(res_path, 1)
     elif args.net == 'UBR_RES_FC3':
-        UBR = UBR_RES_FC3(args.base_model_path, 1)
-    elif args.net =='UBR_DC':
-        UBR = UBR_DC(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
-    elif args.net =='UBR_ANGLE':
-        UBR = UBR_ANGLE(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
-    elif args.net == 'UBR_AUG':
-        UBR = UBR_AUG(args.aug_pre, args.base_model_path, no_dropout=args.no_dropout)
-    elif args.net == 'UBR_TANH0':
-        UBR = UBR_TANH(0, args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
-    elif args.net == 'UBR_TANH1':
-        UBR = UBR_TANH(1, args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
-    elif args.net == 'UBR_TANH2':
-        UBR = UBR_TANH(2, args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+        UBR = UBR_RES_FC3(res_path, 1)
 
     else:
         print("network is not defined")
