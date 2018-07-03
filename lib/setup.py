@@ -112,25 +112,38 @@ class custom_build_ext(build_ext):
         build_ext.build_extensions(self)
 
 
+
+
+# --------------------------------------------------------
+# Fast R-CNN
+# Copyright (c) 2015 Microsoft
+# Licensed under The MIT License [see LICENSE for details]
+# Written by Ross Girshick
+# --------------------------------------------------------
+
+import numpy as np
+from distutils.core import setup
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
+
+cmdclass = {}
 ext_modules = [
     Extension(
-        "model.utils.cython_bbox",
-        ["model/utils/bbox.pyx"],
-        extra_compile_args={'gcc': ["-Wno-cpp", "-Wno-unused-function"]},
-        include_dirs=[numpy_include]
+        "utils.cython_bbox",
+        ["utils/bbox.pyx"],
+        extra_compile_args=["-Wno-cpp", "-Wno-unused-function"],
     ),
     Extension(
-        'pycocotools._mask',
-        sources=['pycocotools/maskApi.c', 'pycocotools/_mask.pyx'],
-        include_dirs=[numpy_include, 'pycocotools'],
-        extra_compile_args={
-            'gcc': ['-Wno-cpp', '-Wno-unused-function', '-std=c99']},
-    ),
+        "utils.cython_nms",
+        ["utils/nms.pyx"],
+        extra_compile_args=["-Wno-cpp", "-Wno-unused-function"],
+    )
 ]
+cmdclass.update({'build_ext': build_ext})
 
 setup(
-    name='faster_rcnn',
+    name='fast_rcnn',
+    cmdclass=cmdclass,
     ext_modules=ext_modules,
-    # inject our custom trigger
-    cmdclass={'build_ext': custom_build_ext},
+    include_dirs=[np.get_include()]
 )

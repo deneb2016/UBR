@@ -984,3 +984,7 @@
 #             dy += step
 #         dx += step
 
+import json
+anno = json.load(open('./data/coco/annotations/coco60_train_21413_61353.json'))
+for img in anno['images']:
+    print(img['file_name'])

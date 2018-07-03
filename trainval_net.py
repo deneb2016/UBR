@@ -18,6 +18,7 @@ from lib.model.ubr.ubr_vgg import UBR_VGG
 from lib.model.ubr.ubr_aug import UBR_AUG
 from lib.model.ubr.ubr_tanh import UBR_TANH
 from lib.model.ubr.ubr_res import UBR_RES, UBR_RES_FC2, UBR_RES_FC3
+from lib.model.ubr.ubr_dc import UBR_DC, UBR_ANGLE
 
 
 from lib.model.utils.box_utils import inverse_transform, jaccard
@@ -66,6 +67,7 @@ def parse_args():
     parser.add_argument('--warping', action='store_true')
 
     parser.add_argument('--no_dropout', action='store_true')
+    parser.add_argument('--no_wd', action = 'store_true')
 
     parser.add_argument('--iou_th', default=0.5, type=float, help='iou threshold to use for training')
 
@@ -198,6 +200,10 @@ def train():
         UBR = UBR_RES_FC2(args.base_model_path, 1)
     elif args.net == 'UBR_RES_FC3':
         UBR = UBR_RES_FC3(args.base_model_path, 1)
+    elif args.net =='UBR_DC':
+        UBR = UBR_DC(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
+    elif args.net =='UBR_ANGLE':
+        UBR = UBR_ANGLE(args.base_model_path, not args.fc, not args.not_freeze, args.no_dropout)
     elif args.net == 'UBR_AUG':
         UBR = UBR_AUG(args.aug_pre, args.base_model_path, no_dropout=args.no_dropout)
     elif args.net == 'UBR_TANH0':
@@ -219,7 +225,7 @@ def train():
             if 'bias' in key:
                 params += [{'params': [value], 'lr': lr * 2, 'weight_decay': 0}]
             else:
-                params += [{'params': [value], 'lr': lr, 'weight_decay': 0.0005}]
+                params += [{'params': [value], 'lr': lr, 'weight_decay': 0 if args.no_wd else 0.0005}]
 
     optimizer = torch.optim.SGD(params, momentum=0.9)
 

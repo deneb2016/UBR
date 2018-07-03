@@ -13,6 +13,7 @@ from scipy.misc import imread
 import cv2
 
 def preprocess(im, rois):
+    rois = torch.FloatTensor(rois.copy())
     raw_img = im.copy()
     # rgb -> bgr
     im = im[:, :, ::-1]
@@ -28,16 +29,17 @@ def preprocess(im, rois):
     data = data.permute(2, 0, 1).contiguous()
 
     rois *= im_scale
+
     # print(data, gt_boxes, data_height, data_width, im_scale, raw_img)
     return data, rois, im_scale
 
 
 class UBRWrapper:
     def __init__(self, model_path):
-        self.UBR = UBR_VGG()
-        self.UBR.create_architecture()
+        self.UBR = UBR_VGG(pretrained_fc=False, no_dropout=True)
         print("loading checkpoint %s" % (model_path))
         checkpoint = torch.load(model_path)
+        self.UBR.create_architecture()
         self.UBR.load_state_dict(checkpoint['model'])
 
         self.UBR.cuda()
@@ -74,6 +76,6 @@ class UBRWrapper:
         ret[:, 2] = refined_boxes[:, 2].clamp(min=0, max=raw_img.shape[1] - 1)
         ret[:, 3] = refined_boxes[:, 3].clamp(min=0, max=raw_img.shape[0] - 1)
 
-        return ret
+        return ret.cpu().numpy()
 
 
