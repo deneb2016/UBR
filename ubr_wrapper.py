@@ -8,6 +8,7 @@ import torch
 from torch.autograd import Variable
 
 from lib.model.ubr.ubr_vgg import UBR_VGG
+from lib.model.ubr.ubr_res import UBR_RES, UBR_RES_FC2, UBR_RES_FC3
 from lib.model.utils.box_utils import inverse_transform
 from scipy.misc import imread
 import cv2
@@ -36,9 +37,17 @@ def preprocess(im, rois):
 
 class UBRWrapper:
     def __init__(self, model_path):
-        self.UBR = UBR_VGG(pretrained_fc=False, no_dropout=True)
         print("loading checkpoint %s" % (model_path))
         checkpoint = torch.load(model_path)
+        if checkpoint['net'] == 'UBR_VGG':
+            self.UBR = UBR_VGG(None, False, True, True)
+        elif checkpoint['net'] == 'UBR_RES':
+            self.UBR = UBR_RES(None, 1, not args.fc)
+        elif checkpoint['net'] == 'UBR_RES_FC2':
+            self.UBR = UBR_RES_FC2(None, 1)
+        elif checkpoint['net'] == 'UBR_RES_FC3':
+            self.UBR = UBR_RES_FC3(None, 1)
+
         self.UBR.create_architecture()
         self.UBR.load_state_dict(checkpoint['model'])
 
@@ -66,7 +75,7 @@ class UBRWrapper:
             rois = torch.zeros((bbox.shape[0], 5)).cuda()
             rois[:, 1:] = refined_boxes[:, :]
             rois = Variable(rois)
-            bbox_pred, base_feat = self.UBR(data, rois)
+            bbox_pred, base_feat = self.UBR(data, rois, base_feat)
             refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
 
         refined_boxes /= im_scale

@@ -208,7 +208,7 @@ class pascal_voc(IMDB):
         for cls_ind, cls in enumerate(self.classes):
             if cls == '__background__':
                 continue
-            print ('Writing %s VOC results file' % cls)
+            #print ('Writing %s VOC results file' % cls)
             filename = self._get_voc_results_file_template().format(cls)
             with open(filename, 'wt') as f:
                 for im_ind, index in enumerate(self.image_index):
