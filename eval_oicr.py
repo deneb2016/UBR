@@ -66,11 +66,11 @@ imdb.competition_mode(False)
 dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
 print(len(dataset))
 
-all_boxes = pickle.load(open('/home/seungkwan/repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
+all_boxes = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
 #all_boxes = pickle.load(open('/home/seungkwan/repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'rb'), encoding='latin1')
 
 ################# refine and nms ####################################
-UBR = UBRWrapper('/home/seungkwan/repo/ubr/%s.pth' % model_name)
+UBR = UBRWrapper('../repo/ubr/%s.pth' % model_name)
 for cls in range(20):
     for i in range(len(all_boxes[cls])):
         if i % 1000 == 0:
@@ -95,7 +95,7 @@ for cls in range(20):
     print('%d class refinement complete' % cls)
 
 all_boxes = apply_nms(all_boxes, 0.3)
-pickle.dump(all_boxes, open('/home/seungkwan/repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
+pickle.dump(all_boxes, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
 ################################################################################
 
-imdb.evaluate_detections(all_boxes, '/home/seungkwan/repo/voc_eval_result/')
+imdb.evaluate_detections(all_boxes, '../repo/voc_eval_result/')
