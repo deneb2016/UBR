@@ -12,7 +12,7 @@ from .pascal_voc import pascal_voc
 from . import factory
 
 import os.path as osp
-ROOT_DIR = '/home/seungkwan/ubr/'
+ROOT_DIR = './'
 
 # We assume your matlab binary is in your path and called `matlab'.
 # If either is not true, just add it to your path and alias it as matlab, or
