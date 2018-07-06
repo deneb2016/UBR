@@ -984,7 +984,12 @@
 #             dy += step
 #         dx += step
 
-import json
-anno = json.load(open('./data/coco/annotations/coco60_train_21413_61353.json'))
-for img in anno['images']:
-    print(img['file_name'])
+# import json
+# anno = json.load(open('./data/coco/annotations/coco60_train_21413_61353.json'))
+# for img in anno['images']:
+#     print(img['file_name'])
+
+print('<ul>')
+for line in open('output.txt').readlines():
+    print('<li> %s </li>' % line.strip())
+print('</ul>')

@@ -1,0 +1,210 @@
+<ul>
+<li> Understanding Humans in Crowded Scenes: Deep Nested Adversarial Learning and A New Benchmark for Multi-Human Parsing </li>
+<li> Incremental Deep Hidden Attribute Learning </li>
+<li> Step-by-step Erasion, One-by-one Collection: A Weakly Supervised Temporal Action Detector </li>
+<li> Visual Domain Adaptation with Manifold Embedded Distribution Alignment </li>
+<li> Object-Difference Attention: A simple relational attention for Visual Question Answering </li>
+<li> Robust Billboard-based, Free-viewpoint Video Synthesis Algorithm to Overcome Occlusions under Challenging Outdoor Sport Scenes </li>
+<li> Multi-Human Parsing Machines </li>
+<li> Deep Priority Hashing </li>
+<li> CropNet: Real-Time Thumbnailing </li>
+<li> Learning to Transfer: Generalizable Attribute Learning with Multitask Neural Model Search </li>
+<li> Supervised Online Hashing via Hadamard Codebook Learning </li>
+<li> Shared Linear Encoder-based Gaussian Process Latent Variable Model for Visual Classification </li>
+<li> Learning Semantic Structure-preserved Embeddings for Cross-modal Retrieval </li>
+<li> Fine-grained Grocery Product Recognition by One-shot Learning </li>
+<li> Fine-grained Representation Learning and Recognition by Exploiting Hierarchical Semantic Embedding </li>
+<li> Style Separation and Synthesis via Generative Adversarial Networks </li>
+<li> Attention-based Pyramid Aggregation Network for Visual Place Recognition </li>
+<li> Dance with Melody : An LSTM-autoencoder Approach on Music-oriented Dance Synthesis </li>
+<li> Fast Parameter Adaptation for Few-shot Image Captioning and Visual Question Answering </li>
+<li> Semi-supervised Deep Generative Modelling of Incomplete Multi-Modality Emotional Data </li>
+<li> Post Tuned Hashing: A New Approach to Indexing High-dimensional Data </li>
+<li> Joint Sign Language Recognition and Education System with ST-Net </li>
+<li> Aesthetic-Driven Image Enhancement by Adversarial Learning </li>
+<li> Cascaded Feature Augmentation with Diffusion for Image Retrieval </li>
+<li> Twitter Sentiment Analysis via Bi-sense Emoji Embedding and Attention-based LSTM </li>
+<li> Temporal Sequence Distillation: Towards Few Frame Action Recognition </li>
+<li> Joint Global and Co-Attentive Representation Learning for Image-Sentence Retrieval </li>
+<li> Multi-View Image Generation from a Single-View </li>
+<li> Slackliner -- An Interactive Slackline Training Assistant </li>
+<li> Hierarchical Memory Modelling for Video Captioning </li>
+<li> Group Re-Identification: Leveraging and Integrating Multi-Grain Information </li>
+<li> Collaborative Annotation of Semantic Objects in Images with Multi-granularity Supervisions </li>
+<li> Multi-modal Preference Modeling for Product Search </li>
+<li> GraphNet: Learning Image Pseudo Annotations for Weakly-Supervised Semantic Segmentation </li>
+<li> Deep Triplet Quantization </li>
+<li> Previewer for Multiple-Scale Object Detector </li>
+<li> QARC: Video Quality Aware Rate Control for Real-Time Video Streaming based on Deep Reinforcement Learning </li>
+<li> What dress fits me best? Fashion Recommendation on the Clothing Style for Personal Body Shape </li>
+<li> SCRATCH: A Scalable Discrete Matrix Factorization Hashing for Cross-Modal Retrieval </li>
+<li> OSMO: Online Specific Models for Occlusion in Multiple Object Tracking under Surveillance Scene </li>
+<li> Cross-modal Moment Localization in Videos </li>
+<li> Attribute-Aware Attention Model for Fine-grained Representation Learning </li>
+<li> Video Forecasting with Forward-Backward-Net: Delving Deeper into Spatiotemporal Consistency </li>
+<li> Learning Discriminative Features with Multiple Granularities for Person Re-Identification </li>
+<li> StripNet: Towards Topology Consistent Strip Structure Segmentation </li>
+<li> Attention-based Multi-Patch Aggregation for Image Aesthetic Assessment </li>
+<li> An End-to-End Quadrilateral Regression Network for Comic Panel Extraction </li>
+<li> CLS: A Cross-user Learning based System for Improving QoE in 360-degree Video Adaptive Streaming </li>
+<li> Only Learn One Sample: Fine-Grained Visual Categorization with One Sample Training </li>
+<li> Life-long Cross-media Correlation Learning </li>
+<li> Text-to-image Synthesis via Symmetrical Distillation Networks </li>
+<li> Multi-Scale Correlation for Sequential Cross-modal Hashing Learning </li>
+<li> Jaguar: Low Latency Mobile Augmented Reality with Flexible Tracking </li>
+<li> Feature Constrained by Pixel: Hierarchical Adversarial Deep Domain Adaptation </li>
+<li> Explore Multi-Step Reasoning in Video Question Answering </li>
+<li> Monocular Camera Based Real-Time Dense Mapping Using Generative Adversarial Network </li>
+<li> Learning Collaborative Generation Correction Modules for Blind Image Deblurring and Beyond </li>
+<li> Watch, Think and Attend: End-to-End Video Classification via Dynamic Knowledge Evolution Modeling </li>
+<li> Multi-Label Image Classification via Knowledge Distillation from Weakly-Supervised Detection </li>
+<li> Fast and Light Manifold CNN based 3D Facial Expression Recognition across Pose Variations </li>
+<li> Unregularized Auto-Encoder with Generative Adversarial Networks for Image Generation </li>
+<li> Real-time 3D Face-Eye Performance Capture of a Person Wearing VR Headset </li>
+<li> Attention and Language Ensemble for Scene Text Recognition with Convolutional Sequence Modeling </li>
+<li> Participation-Contributed Temporal Dynamic Model for Group Activity Recognition </li>
+<li> A Unified Generative Adversarial Framework for Image Generation and Person Re-identification </li>
+<li> Facial Expression Recognition in the Wild: A Cycle-Consistent Adversarial Attention Transfer Approach </li>
+<li> Inferring User Emotive State Changes in Realistic Human-Computer Conversational Dialogs </li>
+<li> Mining Semantics-Preserving Attention for Group Activity Recognition </li>
+<li> Causally Regularized Learning on Data with Agnostic Bias </li>
+<li> I read, I saw, I tell: Texts Assisted Fine-Grained Visual Classification </li>
+<li> Context-Aware Unsupervised Text Stylization </li>
+<li> Bridge The Gap Between VQA and Human Behavior on Omnidirectional Video: A Large-Scale Database and A Deep Learning Model </li>
+<li> When to Learn What: Deep Cognitive Subspace Clustering </li>
+<li> Look Deeper See Richer: Depth-aware Image Paragraph Captioning </li>
+<li> Depth Structure Preserving Scene Image Generation </li>
+<li> CA3Net: Contextual-Attentional Attribute-Appearance Network for Person Re-Identification </li>
+<li> Learning Multimodal Taxonomy via Variational Deep Graph Embedding and Clustering </li>
+<li> Beyond Narrative Description: Generating Poetry from Images by Multi-Adversarial Training </li>
+<li> GNAS: A Greedy Neural Architecture Search Method for Multi-Attribute Learning </li>
+<li> A Distributed Approach for Bitrate Selection in HTTP Adaptive Streaming </li>
+<li> Generative Adversarial Product Quantisation </li>
+<li> EmotionGAN: Unsupervised Domain Adaptation for Learning Discrete Probability Distributions of Image Emotions </li>
+<li> Few-Shot Adaptation for Video Semantic Indexing </li>
+<li> Historical Context-based Style Classification of Painting Images via Label Distribution Learning </li>
+<li> Sparsely Grouped Multi-task Generative Adversarial Networks for Facial Attribute Manipulation </li>
+<li> High-Quality Exposure Correction of Underexposed Photos </li>
+<li> Fashion Sensitive Clothing Recommendation using Hierarchical Collocation Model </li>
+<li> A Margin-based MLE for Crowdsourced Partial Ranking </li>
+<li> Personalized Serious Games for Cognitive Intervention with Lifelog Visual Analytics </li>
+<li> PHD-GIFs: Personalized Highlight Detection for Automatic GIF Creation </li>
+<li> iHuman3D: Intelligent Human Body 3D Reconstruction using a Single Flying Camera </li>
+<li> Face-Voice Matching using Cross-modal Embeddings </li>
+<li> Multi-Scale Context Attention Network for Image Retrieval </li>
+<li> When Deep Fool Meets Deep Prior: Adversarial Attack on Image Super-Resolution </li>
+<li> Musicality-Novelty Generative Adversarial Nets for Algorithmic Composition </li>
+<li> Knowledge-aware Multimodal Dialogue Systems </li>
+<li> Cross-Domain Adversarial Feature Learning for Sketch Re-identification </li>
+<li> Comprehensive Distance-Preserving Autoencoders for Cross-Modal Retrieval </li>
+<li> Facial Expression Recognition Enhanced by Thermal Images through Adversarial Learning </li>
+<li> CSAN: Contextual Self-Attention Network for User Sequential Recommendation </li>
+<li> Semantic Human Matting </li>
+<li> Visual Spatial Attention Network for Relationship Detection </li>
+<li> Geometry Guided Adversarial Facial Expression Synthesis </li>
+<li> Personalized multiple facial action unit recognition through generative adversarial recognition network </li>
+<li> Learning Joint Multimodal Representation with Adversarial Attention Networks </li>
+<li> Detecting Abnormality without Knowing Normality: A Two-stage Approach for Unsupervised Video Abnormal Event Detection </li>
+<li> WildFish: A Large Benchmark for Fish Recognition in the Wild </li>
+<li> Temporal Hierarchical Attention at Category- and Item-Level for Micro-Video Click-Through Prediction </li>
+<li> BeautyGAN: Instance-level Facial Makeup Transfer with Deep Generative Adversarial Network </li>
+<li> Songle Sync: A Large-Scale Web-based Platform for Controlling Various Devices in Synchronization with Music </li>
+<li> CloudVR: Cloud Accelerated Interactive Mobile Virtual Reality </li>
+<li> RGCNN: Regularized Graph CNN for Point Cloud Segmentation </li>
+<li> Video-based Person Re-identification via Self-Paced Learning and Deep Reinforcement Learning Framework </li>
+<li> Photo Squarization by Deep Multi-Operator Retargeting </li>
+<li> Predicting Visual Context for Unsupervised Event Segmentation in Continuous Photo-streams </li>
+<li> Semantic Image Inpainting with Progressive Generative Networks </li>
+<li> Attentive Interactive Convolutional Matching for Community Question Answering in Social Multimedia </li>
+<li> Deep Understanding of Cooking Procedure for Cross-modal Recipe Retrieval </li>
+<li> LA-Net: Layout-Aware Dense Network for Monocular Depth Estimation </li>
+<li> Direction-aware Neural Style Transfer </li>
+<li> Reconfigurable Inverted Index </li>
+<li> Learning and Fusing Multimodal Deep Features for Acoustic Scene Categorization </li>
+<li> Context-Aware Visual Policy Network for Sequence-Level Image Captioning </li>
+<li> A Unified Framework for Multimodal Domain Adaptation </li>
+<li> Trusted Guidance Pyramid Network for Human Parsing </li>
+<li> USAR: an interactive user-specific aesthetic ranking framework for images </li>
+<li> Non-locally Enhanced Encoder-Decoder Network for Single Image De-raining </li>
+<li> Structure Guided Photorealistic Style Transfer </li>
+<li> Tracking-assisted Weakly Supervised Online Visual Object Segmentation in Unconstrained Videos </li>
+<li> An ADMM-Based Universal Framework for Adversarial Attacks on Deep Neural Networks </li>
+<li> Decoupled Novel Object Captioner </li>
+<li> ThoughtViz: Visualizing Human Thoughts Using Generative Adversarial Network </li>
+<li> Optimizing Personalized Interaction Experience in Crowd-Interactive Livecast: A Cloud-Edge Approach </li>
+<li> End-to-End Blind Quality Assessment of Compressed Video Using Deep Neural Networks </li>
+<li> Dynamic Sound Field Synthesis for Speech and Music Optimization </li>
+<li> Local Convolutional Neural Networks for Person Re-Identification </li>
+<li> Interpretable Multimodal Retrieval for Fashion Products </li>
+<li> Conditional Expression Synthesis with Face Parsing Transformation </li>
+<li> A Feature-Adaptive Semi-Supervised Framework for Co-Saliency Detection </li>
+<li> Attentive Recurrent Neural Network for Weak-supervised Multi-label Image Classification </li>
+<li> iSPA-Net: Iterative Semantic Pose Alignment Network </li>
+<li> Extractive Video Summarizer with Memory Augmented Neural Networks </li>
+<li> ModaNet: A Large-Scale Street Fashion Dataset with Polygon Annotations </li>
+<li> Fully Point-wise Convolutional Neural Network for Modeling Statistical Regularities in Natural Images </li>
+<li> From data to knowledge: deep learning model compression, transmission and communication </li>
+<li> ChipGAN: A Generative Adversarial Network for Chinese Ink Wash Painting Style Transfer </li>
+<li> Dest-ResNet: a Deep Spatiotemporal Residual Network for Hotspot Traffic Speed Prediction </li>
+<li> Boosting Scene Parsing Performance via Reliable Scale Prediction </li>
+<li> Deep Cross modal learning for Caricature Verification and Identification (CaVINet) </li>
+<li> Online Action Tube Detection via Resolving the Spatio-temporal Context Pattern </li>
+<li> Adaptive Temporal Encoding Network for Video Instance-level Human Parsing </li>
+<li> User-Guided Deep Anime Line Art Colorization with Conditional Adversarial Networks </li>
+<li> Enhancing Visual Question Answering Using Dropout </li>
+<li> Online Inter-Camera Trajectory Association Exploiting Person Re-Identification and Camera Topology </li>
+<li> Improving QoE of ABR Streaming Sessions through QUIC Retransmissions </li>
+<li> Temporal Cross-Media SubSpaces Learning with Soft-Constraints </li>
+<li> Learning Local Descriptors with Adversarial Enhancer from Volumetric Geometry Patches </li>
+<li> SibNet: Sibling Convolutional Encoder for Video Captioning </li>
+<li> Context-Dependent Diffusion Network for Visual Relationship Detection </li>
+<li> Your Attention is Unique: Detecting 360-Degree Video Saliency in Head-Mounted Display for Head Movement Prediction </li>
+<li> Generating Defensive Plays in Basketball Games </li>
+<li> Connectionist temporal fusion for Sign Language Translation </li>
+<li> JPEG Decompression in the Homomorphic Encryption Domain </li>
+<li> BitStream: Efficient Computing Architecture for Real-Time Low-Power Inference of Binary Neural Networks on CPUs </li>
+<li> Support Neighbor Loss for Person Re-Identification </li>
+<li> A Large Scale RGB-D Database for Arbitrary-view Human Action Recognition </li>
+<li> FlexStream: Towards Flexible Adaptive Video Streaming on End Devices using Extreme SDN </li>
+<li> Spotting and Aggregating Salient Regions for Video Captioning </li>
+<li> Structural inpainting </li>
+<li> Partial Multi-View Subspace Clustering </li>
+<li> FoV-Aware Edge Caching for Adaptive 360° Video Streaming </li>
+<li> Attentive LSTM Crowd Flow Machines </li>
+<li> Perceptual Temporal Incoherence Aware Stereo Video Retargeting </li>
+<li> Fast Discrete Cross-modal Hashing With Regressing From Semantic Labels </li>
+<li> Dense Auto-Encoder Hashing for Robust Cross-Modality Retrieval </li>
+<li> Investigation of Small Group Social Interactions using Deep Visual Activity-Based Nonverbal Features </li>
+<li> Dissimilarity Representation Learning for Generalized Zero-Shot Recognition </li>
+<li> Examine before You Answer: Multi-task Learning with Adaptive-attentions for Multiple-choice VQA </li>
+<li> Cumulative Nets for Edge Detection </li>
+<li> Beyond the Product: Discovering Image Posts for Brands in Social Media </li>
+<li> Robustness and Discrimination Oriented Hashing Combining Texture and Invariant Vector Distance </li>
+<li> SLIONS: A Karaoke Application to Enhance Foreign Language Learning </li>
+<li> Drawing in a Virtual 3D Space - Introducing VR Drawing in Elementary School Art Education </li>
+<li> Semi-Supervised DFF: Decoupling Detection and Feature Flow for Video Object Detectors </li>
+<li> Residual-Guide Feature Fusion Network for Single Image Deraining </li>
+<li> Paragraph generation network with visual relationship detection </li>
+<li> Hybrid Point Cloud Attribute Compression Using Slice-based Layered Structure and Block-based Intra Prediction </li>
+<li> CIRCE: Real-Time Caching for Instance Recognition on Cloud Environments and Multi-Core Architectures </li>
+<li> From Volcano to Toyshop: Adaptive Discriminative Region Discovery for Scene Recognition </li>
+<li> Unsupervised Learning of 3D Model Reconstruction from Hand-Drawn Sketches </li>
+<li> Learning to Synthesize 3D Indoor Scenes from Monocular Images </li>
+<li> DASH for 3D Networked Virtual Environment </li>
+<li> PVNet: A Joint Convolutional Network of Point Cloud and Multi-View for 3D Shape Recognition </li>
+<li> The Effect of Foveation on High Dynamic Range Video Perception </li>
+<li> GestureGAN for Hand Gesture-to-Gesture Translation in the Wild </li>
+<li> MiniView Layout for Bandwidth-Efficient 360-Degree Video </li>
+<li> An Efficient Deep Quantized Compressed Sensing Coding Framework of Natural Images </li>
+<li> Deep Multimodal Image-Repurposing Detection </li>
+<li> Video-to-Video Translation with Global Temporal Consistency </li>
+<li> Robust Correlation Filter Tracking with Shepherded Instance-Aware Proposals </li>
+<li> Cross-Species Learning: A Low-Cost Approach to Learning Human Fight from Animal Fight </li>
+<li> PoB: Toward Reasoning Patterns of Beauty in Image Data </li>
+<li> Webly Supervised Joint Embedding for Cross-Modal Image-Text Retrieval </li>
+<li> Deep Adaptive Temporal Pooling for Activity Recognition </li>
+<li> Human Conversation Analysis Using Attentive Multimodal Networks with Hierarchical Encoder-Decoder </li>
+<li> Pseudo Transfer with Marginalized Corrupted Attribute for Zero-shot Learning </li>
+<li> Crossing-Domain Generative Adversarial Networks for Unsupervised Multi-Domain Image-to-Image Translation </li>
+<li> Person Re-identification with Hierarchical Deep Learning Feature and efficient XQDA Metric </li>
+</ul>

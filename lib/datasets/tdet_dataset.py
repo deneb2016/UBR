@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 
 from lib.datasets.coco_loader import COCOLoader
-from lib.datasets.voc_loader import VOCLoader
+from lib.datasets.voc_loader import VOCLoader, VOCLoaderFewShot
 from lib.model.utils.augmentations import PhotometricDistort
 from lib.model.utils.box_utils import to_point_form, to_center_form
 from skimage.transform import PiecewiseAffineTransform, warp
@@ -81,6 +81,12 @@ class TDetDataset(data.Dataset):
                 self._dataset_loaders.append(VOCLoader('./data/VOCdevkit2007', [('2007', 'trainval')]))
             elif name == 'voc07_test':
                 self._dataset_loaders.append(VOCLoader('./data/VOCdevkit2007', [('2007', 'test')]))
+            elif name == 'voc07_few_shot_1':
+                self._dataset_loaders.append(VOCLoaderFewShot('./data/VOCdevkit2007', [('2007', 'trainval')], 1))
+            elif name == 'voc07_few_shot_2':
+                self._dataset_loaders.append(VOCLoaderFewShot('./data/VOCdevkit2007', [('2007', 'trainval')], 2))
+            elif name == 'voc07_few_shot_3':
+                self._dataset_loaders.append(VOCLoaderFewShot('./data/VOCdevkit2007', [('2007', 'trainval')], 3))
             else:
                 print('@@@@@@@@@@ undefined dataset @@@@@@@@@@@')
 
@@ -144,9 +150,12 @@ class TDetDataset(data.Dataset):
         # image rescale
         im_shape = im.shape
         im_size_min = np.min(im_shape[0:2])
+        im_size_max = np.max(im_shape[0:2])
 
         if self.multi_scale:
             im_scale = np.random.choice([416, 500, 600, 720, 864]) / float(im_size_min)
+            if im_size_max * im_scale > 1200:
+                im_scale = 1200 / im_size_max
         else:
             im_scale = 600 / float(im_size_min)
         im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)

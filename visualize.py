@@ -49,7 +49,6 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='eval')
 
-    parser.add_argument('--K', default=1, type=int)
     parser.add_argument('--model_name', default='UBR_VGG_100113_15' ,type=str)
 
     args = parser.parse_args()
@@ -59,19 +58,18 @@ def parse_args():
 args = parse_args()
 
 model_name = args.model_name
-K = args.K
 
 imdb = get_imdb('voc_2007_test')
 imdb.competition_mode(False)
 dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
+print(len(dataset))
 
-all_boxes = pickle.load(open('../repo/oicr_result/oicr_frcnn_detections.pkl', 'rb'), encoding='latin1')[1:]
-#all_boxes = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
-#all_boxes = pickle.load(open('/home/seungkwan/repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'rb'), encoding='latin1')
+all_boxes = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
+all_boxes = apply_nms(all_boxes, 0.3)
 
 ################# refine and nms ####################################
 UBR = UBRWrapper('../repo/ubr/%s.pth' % model_name)
-for cls in range(20):
+for cls in range(0, 17):
     for i in range(len(all_boxes[cls])):
         if i % 1000 == 0:
             print(i)
@@ -79,25 +77,21 @@ for cls in range(20):
             continue
 
         # for visualize
-        # if all_boxes[cls][i][0, 4] < 0.3:
-        #     continue
+
+        if all_boxes[cls][i][0, 4] < 0.3:
+            continue
 
         img, gt, h, w, id = dataset[i]
-        boxes = all_boxes[cls][i][:, :4].copy()
-        refined_boxes = UBR.query(img, boxes, K)
-        all_boxes[cls][i][:, :4] = refined_boxes[:, :]
+        boxes = all_boxes[cls][i][:, :4]
 
-        # plt.imshow(img)
-        # draw_box(boxes[:5], 'yellow')
-        # draw_box(refined_boxes[:5], 'blue')
-        # plt.show()
+        for K in range(1, 4):
+            refined_boxes = UBR.query(img, boxes.copy(), K)
+            plt.imshow(img)
+            draw_box(boxes[:1], 'yellow')
+            draw_box(refined_boxes[:1], 'blue')
+            plt.show()
 
     print('%d class refinement complete' % cls)
 
-all_boxes = apply_nms(all_boxes, 0.3)
-#pickle.dump(all_boxes, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
-pickle.dump(all_boxes, open('../repo/oicr_result/oicr_frcnn_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
-
 ################################################################################
 
-imdb.evaluate_detections(all_boxes, '../repo/voc_eval_result/')
