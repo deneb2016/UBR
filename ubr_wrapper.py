@@ -58,6 +58,7 @@ class UBRWrapper:
     # bbox = n * 4 bounding boxes
     # return n * 4 refined boxes
     def query(self, raw_img, bbox, iter_cnt=1):
+        result = []
         data, rois, im_scale = preprocess(raw_img, bbox)
         new_rois = torch.zeros((bbox.shape[0], 5)).cuda()
         new_rois[:, 1:] = rois[:, :]
@@ -66,6 +67,7 @@ class UBRWrapper:
         rois = Variable(rois)
         bbox_pred, base_feat = self.UBR(data, rois)
         refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
+        result.append(refined_boxes.clone())
         for i in range(1, iter_cnt):
             refined_boxes[:, 0].clamp_(min=0, max=data.size(3) - 1)
             refined_boxes[:, 1].clamp_(min=0, max=data.size(2) - 1)
@@ -77,15 +79,19 @@ class UBRWrapper:
             rois = Variable(rois)
             bbox_pred, base_feat = self.UBR(data, rois, base_feat)
             refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
+            result.append(refined_boxes.clone())
 
-        refined_boxes /= im_scale
-        ret = torch.zeros((refined_boxes.size(0), 4)).cuda()
-        ret[:, 0] = refined_boxes[:, 0].clamp(min=0, max=raw_img.shape[1] - 1)
-        ret[:, 1] = refined_boxes[:, 1].clamp(min=0, max=raw_img.shape[0] - 1)
-        ret[:, 2] = refined_boxes[:, 2].clamp(min=0, max=raw_img.shape[1] - 1)
-        ret[:, 3] = refined_boxes[:, 3].clamp(min=0, max=raw_img.shape[0] - 1)
+        for i in range(iter_cnt):
+            here = result[i]
+            here /= im_scale
+            ret = np.zeros((refined_boxes.size(0), 4))
+            ret[:, 0] = here[:, 0].clamp(min=0, max=raw_img.shape[1] - 1).cpu().numpy()
+            ret[:, 1] = here[:, 1].clamp(min=0, max=raw_img.shape[0] - 1).cpu().numpy()
+            ret[:, 2] = here[:, 2].clamp(min=0, max=raw_img.shape[1] - 1).cpu().numpy()
+            ret[:, 3] = here[:, 3].clamp(min=0, max=raw_img.shape[0] - 1).cpu().numpy()
+            result[i] = ret
 
-        return ret.cpu().numpy()
+        return result
 
 
 class UBRWrapperCUDA:

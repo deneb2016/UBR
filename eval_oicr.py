@@ -41,7 +41,7 @@ def apply_nms(all_boxes, thresh):
             nms_boxes[cls_ind][im_ind] = dets[keep, :].copy()
     return nms_boxes
 
-
+import time
 import argparse
 def parse_args():
     """
@@ -49,7 +49,6 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='eval')
 
-    parser.add_argument('--K', default=1, type=int)
     parser.add_argument('--model_name', default='UBR_VGG_100113_15' ,type=str)
 
     args = parser.parse_args()
@@ -59,23 +58,26 @@ def parse_args():
 args = parse_args()
 
 model_name = args.model_name
-K = args.K
 
 imdb = get_imdb('voc_2007_test')
 imdb.competition_mode(False)
-dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
+dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')], True)
 
 #all_boxes = pickle.load(open('../repo/oicr_result/oicr_frcnn_detections.pkl', 'rb'), encoding='latin1')[1:]
-all_boxes = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
+all_boxes1 = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
+all_boxes2 = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
+all_boxes3 = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
+
 #all_boxes = pickle.load(open('/home/seungkwan/repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'rb'), encoding='latin1')
 
 ################# refine and nms ####################################
 UBR = UBRWrapper('../repo/ubr/%s.pth' % model_name)
 for cls in range(20):
-    for i in range(len(all_boxes[cls])):
+    st = time.time()
+    for i in range(len(all_boxes1[cls])):
         if i % 1000 == 0:
             print(i)
-        if len(all_boxes[cls][i]) == 0:
+        if len(all_boxes1[cls][i]) == 0:
             continue
 
         # for visualize
@@ -83,21 +85,33 @@ for cls in range(20):
         #     continue
 
         img, gt, h, w, id = dataset[i]
-        boxes = all_boxes[cls][i][:, :4].copy()
-        refined_boxes = UBR.query(img, boxes, K)
-        all_boxes[cls][i][:, :4] = refined_boxes[:, :]
+        boxes = all_boxes1[cls][i][:, :4].copy()
+        refined_boxes = UBR.query(img, boxes, 3)
+        all_boxes1[cls][i][:, :4] = refined_boxes[0][:, :]
+        all_boxes2[cls][i][:, :4] = refined_boxes[1][:, :]
+        all_boxes3[cls][i][:, :4] = refined_boxes[2][:, :]
+
 
         # plt.imshow(img)
         # draw_box(boxes[:5], 'yellow')
         # draw_box(refined_boxes[:5], 'blue')
         # plt.show()
 
-    print('%d class refinement complete' % cls)
+    print('%d class refinement complete %f' % (cls, time.time() - st))
+    st = time.time()
 
-all_boxes = apply_nms(all_boxes, 0.3)
-pickle.dump(all_boxes, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
+all_boxes1 = apply_nms(all_boxes1, 0.3)
+all_boxes2 = apply_nms(all_boxes2, 0.3)
+all_boxes3 = apply_nms(all_boxes3, 0.3)
+
+pickle.dump(all_boxes1, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 1), 'wb'))
+pickle.dump(all_boxes2, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 2), 'wb'))
+pickle.dump(all_boxes3, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 3), 'wb'))
+
 #pickle.dump(all_boxes, open('../repo/oicr_result/oicr_frcnn_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
 
 ################################################################################
 
-imdb.evaluate_detections(all_boxes, '../repo/voc_eval_result/')
+imdb.evaluate_detections(all_boxes1, '../repo/voc_eval_result/')
+imdb.evaluate_detections(all_boxes2, '../repo/voc_eval_result/')
+imdb.evaluate_detections(all_boxes3, '../repo/voc_eval_result/')
