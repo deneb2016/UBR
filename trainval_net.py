@@ -301,11 +301,11 @@ def train():
 
 
             #refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
-            plt.imshow(raw_img)
+            #plt.imshow(raw_img)
             #draw_box(rois[:, 1:].data / im_scale)
             #draw_box(refined_boxes / im_scale, 'yellow')
-            draw_box(gt_boxes.data / im_scale, 'black')
-            plt.show()
+            #draw_box(gt_boxes.data / im_scale, 'black')
+            #plt.show()
             loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
 
             if loss is None:
