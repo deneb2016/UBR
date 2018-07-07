@@ -108,6 +108,7 @@ def parse_args():
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load model',
                         default=1, type=int)
+    parser.add_argument('--not_load_optim', dest='no_optim', action='store_true')
 
     args = parser.parse_args()
     return args
@@ -228,12 +229,13 @@ def train():
         assert args.net == checkpoint['net']
         args.start_epoch = checkpoint['epoch']
         UBR.load_state_dict(checkpoint['model'])
-        if 'patience' in checkpoint:
-            patience = checkpoint['patience']
-        if 'last_optima' in checkpoint:
-            last_optima = checkpoint['last_optima']
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        lr = optimizer.param_groups[0]['lr']
+        if args.no_optim is not:
+            if 'patience' in checkpoint:
+                patience = checkpoint['patience']
+            if 'last_optima' in checkpoint:
+                last_optima = checkpoint['last_optima']
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            lr = optimizer.param_groups[0]['lr']
         print("loaded checkpoint %s" % (load_name))
 
     log_file_name = os.path.join(output_dir, 'log_{}_{}.txt'.format(args.net, args.session))

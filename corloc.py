@@ -1,14 +1,13 @@
-from lib.voc_data import VOCDetection
+from lib.voc_data import VOCDiscovery
 from matplotlib import pyplot as plt
 import numpy as np
 import math
 from ubr_wrapper import  UBRWrapperCUDA
 import time
+from scipy.io import loadmat
 from lib.model.utils.box_utils import jaccard
 aspect_ratios = [0.5, 0.66, 1.0, 1.5, 2.0]
-#achor_sizes = [30, 50, 100, 200, 300, 400]
-achor_sizes = [32, 48, 72, 108, 162, 243]
-
+achor_sizes = [30, 50, 100, 200, 300, 400]
 
 
 def generate_anchor_boxes(im_height, im_width):
@@ -39,7 +38,6 @@ def generate_anchor_boxes(im_height, im_width):
     return ret
 
 
-ubr = UBRWrapperCUDA('/home/seungkwan/repo/ubr/UBR_RES_FC3_500001_13.pth')
 import torch
 
 
@@ -60,7 +58,7 @@ def discovery_object(img, num_prop, edge_iou_th=0.5, nms_iou=0.5, num_refine=1):
 
     refined_boxes = ubr.query(img, rand_boxes[:, :4], num_refine)
     iou = jaccard(refined_boxes, refined_boxes)
-    degree = (iou.gt(edge_iou_th).float()).sum(1) / torch.sqrt(torch.FloatTensor(rand_boxes[:, 4]).cuda())
+    degree = (iou.gt(edge_iou_th).float()).sum(1)
     #degree = degree / torch.log(rand_boxes[:, 4])
     #degree = iou.gt(edge_iou_th).float().sum(1)
     #degree = torch.exp(iou).sum(1)
@@ -74,7 +72,7 @@ def discovery_object(img, num_prop, edge_iou_th=0.5, nms_iou=0.5, num_refine=1):
             break
         here = here[0]
         dead_mask = (iou[here, :] > nms_iou)
-        degree[dead_mask] = degree[dead_mask] * 0.1
+        degree[dead_mask] = degree[dead_mask] * 0.5
         degree[here] = -1
         #mean_box = torch.mean(refined_boxes[torch.nonzero(dead_mask).squeeze()], 0)
 
@@ -96,52 +94,66 @@ def parse_args():
     parser.add_argument('--edge_iou', default=0.5, type=float)
     parser.add_argument('--nms_iou', default=0.5, type=float)
     parser.add_argument('--num_refine', default=1, type=int)
-    parser.add_argument('--dataset', type=str)
 
     args = parser.parse_args()
     return args
 
+result_path = '/home/seungkwan/repo/proposals/VOC07_trainval_1/%s.mat'
 
 args = parse_args()
-dataset = VOCDetection('./data/VOCdevkit2007', [('2007', args.dataset)], keep_difficult=True)
-from scipy.io import savemat
-fail_cnt = 0
-np.random.seed(9213)
+# avg = 0
+# for cls in range(20):
+#     dataset = VOCDiscovery('./data/VOCdevkit2007', [('2007', 'trainval')], cls)
+#     cor = 0
+#     for i in range(len(dataset)):
+#         id, gt = dataset.pull_anno(i)
+#         labels = gt[:, 4].astype(np.int)
+#         mask = np.where(gt[:, 4].astype(np.int) == cls)
+#         gt = gt[mask]
+#
+#         proposals = loadmat(result_path % id)['proposals'] - 1
+#         top1 = proposals[0:1]
+#         iou = jaccard(torch.FloatTensor(top1), torch.FloatTensor(gt[:, :4]))
+#         if iou.max() > 0.5:
+#             cor = cor + 1
+#
+#     #print('cls %d: %d %d %.4f' % (cls, cor, len(dataset), cor / len(dataset)))
+#     print(cor / len(dataset))
+#     avg = avg + cor / len(dataset)
+# print(avg / 20)
 
-perm = np.random.permutation(len(dataset))
 
-K = args.K
-pos_cnt = np.array([0 for i in range(K)])
-tot_gt = 0
-st = time.time()
-tp = 0
-P = 0
-
+avg = 0
+dataset = VOCDiscovery('./data/VOCdevkit2007', [('2007', 'trainval')], None)
+cor = np.zeros(20)
+tot = np.zeros(20)
 for i in range(len(dataset)):
-    img, gt, h, w, id = dataset[perm[i]]
-    result = discovery_object(img, args.K, args.edge_iou, args.nms_iou, args.num_refine)
+    id, gt = dataset.pull_anno(i)
+    labels = gt[:, 4].astype(np.int)
 
-    #np.save('/home/seungkwan/repo/proposals/VOC07_trainval_ubr64523_%d_%.1f_%.1f_%d/%s' % (args.K, args.edge_iou, args.nms_iou, args.num_refine, id[1]), result)
-    savemat('/home/seungkwan/repo/proposals/VOC07_%s_1/%s' % (args.dataset, id[1]), {'proposals': result + 1}) # this is because matlab use one-based index
+    proposals = loadmat(result_path % id)['proposals'] - 1
+    top1 = proposals[0:1]
+    iou = jaccard(torch.FloatTensor(top1), torch.FloatTensor(gt[:, :4]))
+    max_iou, max_idx = iou.max(1)
+    max_iou = max_iou[0]
+    max_idx = max_idx[0]
+    if max_iou > 0.5:
+        cls = labels[max_idx]
+        cor[cls] = cor[cls] + 1
+    for cls in range(20):
+        if cls in labels:
+            tot[cls] = tot[cls] + 1
 
-    # gt = gt[:, :4]
-    # gt[:, 0] *= w
-    # gt[:, 2] *= w
-    # gt[:, 1] *= h
-    # gt[:, 3] *= h
-    #
-    # gt = torch.FloatTensor(gt)
-    # result = torch.FloatTensor(result)
-    # iou = jaccard(result, gt)
-    # P = P + gt.size(0)
-    # tp = tp + iou.max(0)[0].gt(0.5).sum()
+for a in cor:
+    print('%.3f' % a, end=' ')
+print('')
 
-    if i % 10 == 9:
-        print(i, time.time() - st)
-        st = time.time()
+for a in tot:
+    print('%.3f' % a, end=' ')
+print('')
 
-    # plt.imshow(img)
-    # draw_box(result)
-    # draw_box(result[0:1, :], 'black')
-    # plt.show()
+for a in cor / tot:
+    print('%.3f' % a, end=' ')
+print('')
 
+print(np.average(cor / tot))
