@@ -265,11 +265,12 @@ class UBR_RES(nn.Module):
 
 
 class UBR_RES_FC3(nn.Module):
-    def __init__(self, base_model_path=None, fixed_blocks=1):
+    def __init__(self, base_model_path=None, fixed_blocks=1, no_dropout=True):
         super(UBR_RES_FC3, self).__init__()
         self.model_path = base_model_path
         self.dout_base_model = 1024
         self.fixed_blocks = fixed_blocks
+        self.no_dropout = no_dropout
 
     def _init_modules(self):
         res = resnet101()
@@ -282,12 +283,22 @@ class UBR_RES_FC3(nn.Module):
 
         # not using the last maxpool layer
         self.base = nn.Sequential(res.conv1, res.bn1, res.relu, res.maxpool, res.layer1, res.layer2, res.layer3)
-        self.top = nn.Sequential(
-            nn.Linear(1024 * 7 * 7, 4096),
-            nn.ReLU(True),
-            nn.Linear(4096, 4096),
-            nn.ReLU(True)
-        )
+        if self.no_dropout:
+            self.top = nn.Sequential(
+                nn.Linear(1024 * 7 * 7, 4096),
+                nn.ReLU(True),
+                nn.Linear(4096, 4096),
+                nn.ReLU(True)
+            )
+        else:
+            self.top = nn.Sequential(
+                nn.Linear(1024 * 7 * 7, 4096),
+                nn.ReLU(True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(True),
+                nn.Dropout()
+            )
 
         self.bbox_pred_layer = nn.Linear(4096, 4)
         self.roi_align = RoIAlignAvg(7, 7, 1.0 / 16.0)

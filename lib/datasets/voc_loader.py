@@ -61,6 +61,8 @@ class VOCLoaderFewShot:
         self.items = []
         self.num_classes = 0
         self.name_to_index = dict(zip(VOC_CLASSES, range(len(VOC_CLASSES))))
+
+        dupl_check = {}
         print('dataset loading...' + repr(image_sets))
         for (year, name) in image_sets:
             rootpath = os.path.join(root, 'VOC' + year)
@@ -71,6 +73,10 @@ class VOCLoaderFewShot:
                     line, exist = anno_file[idx].split()
                     if exist == '-1':
                         continue
+                    if line.strip() in dupl_check:
+                        print('dupl')
+                        continue
+                    dupl_check[line.strip()] = True
                     data = {}
                     id = 'VOC' + year + '_' + line.strip()
                     target = ET.parse(os.path.join(rootpath, 'Annotations', line.strip() + '.xml'))

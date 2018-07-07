@@ -55,6 +55,7 @@ def parse_args():
                         help='number of iterations to save',
                         default=1, type=int)
 
+    parser.add_argument('--dataset', type=str, default='coco60')
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
                         default=0, type=int)
@@ -185,8 +186,8 @@ def train():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    train_dataset = TDetDataset(['coco60_train'], training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd, warping=args.warping)
-    val_dataset = TDetDataset(['coco60_val'], training=False)
+    train_dataset = TDetDataset([args.dataset + '_train'], training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd, warping=args.warping)
+    val_dataset = TDetDataset([args.dataset + '_val'], training=False)
     tval_dataset = TDetDataset(['coco_voc_val'], training=False)
 
     lr = args.lr
@@ -300,11 +301,11 @@ def train():
 
 
             #refined_boxes = inverse_transform(rois[:, 1:].data, bbox_pred.data)
-            #plt.imshow(raw_img)
+            plt.imshow(raw_img)
             #draw_box(rois[:, 1:].data / im_scale)
             #draw_box(refined_boxes / im_scale, 'yellow')
-            #draw_box(gt_boxes.data / im_scale, 'black')
-            #plt.show()
+            draw_box(gt_boxes.data / im_scale, 'black')
+            plt.show()
             loss, num_selected_rois, num_rois, refined_rois = criterion(rois[:, 1:5], bbox_pred, gt_boxes)
 
             if loss is None:

@@ -250,7 +250,7 @@ class PhotometricDistort(object):
         self.pd = [
             RandomContrast(),
             ConvertColor(transform='HSV'),
-            RandomSaturation(),
+            #RandomSaturation(),
             RandomHue(),
             ConvertColor(current='HSV', transform='BGR'),
             RandomContrast()
@@ -262,9 +262,12 @@ class PhotometricDistort(object):
         im = image.copy()
         im, boxes, labels = self.rand_brightness(im, None, None)
         if random.randint(2):
-            distort = Compose(self.pd[:-1])
+            distort = Compose(self.pd[:])
         else:
-            distort = Compose(self.pd[1:])
+            distort = Compose(self.pd[:])
         im, boxes, labels = distort(im, None, None)
         im, _, _ = self.rand_light_noise(im, None, None)
+
+        #im = im * np.random.normal(1.0, 0.1, 3).astype(np.float32)
+        # im = im + np.array([np.random.normal(0, 0.05), np.random.normal(0, 0.05), np.random.normal(0, 0.05)]).astype(np.float32)
         return im

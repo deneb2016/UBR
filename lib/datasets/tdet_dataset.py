@@ -73,8 +73,16 @@ class TDetDataset(data.Dataset):
         for name in dataset_names:
             if name == 'coco60_train':
                 self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco60_train_21413_61353.json', './data/coco/images/train2017/'))
+            elif name == 'coco40_train':
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco40_train_21413_62893.json', './data/coco/images/train2017/'))
+            elif name == 'coco20_train':
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco20_train_21413_52511.json', './data/coco/images/train2017/'))
             elif name == 'coco60_val':
                 self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco60_val_900_2575.json', './data/coco/images/val2017/'))
+            elif name == 'coco40_val':
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco40_val_1000_2902.json', './data/coco/images/val2017/'))
+            elif name == 'coco20_val':
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco20_val_1000_2422.json', './data/coco/images/val2017/'))
             elif name == 'coco_voc_val':
                 self._dataset_loaders.append(COCOLoader('./data/coco/annotations/voc20_val_740_2844.json', './data/coco/images/val2017/'))
             elif name == 'voc07_trainval':
@@ -145,6 +153,7 @@ class TDetDataset(data.Dataset):
         im = im.astype(np.float32, copy=False)
         if self.pd is not None:
             im = self.pd(im)
+            raw_img = self.pd(raw_img.astype(np.float32, copy=False)).astype(np.uint8)
         im -= np.array([[[102.9801, 115.9465, 122.7717]]])
 
         # image rescale

@@ -69,7 +69,7 @@ all_boxes = apply_nms(all_boxes, 0.3)
 
 ################# refine and nms ####################################
 UBR = UBRWrapper('../repo/ubr/%s.pth' % model_name)
-for cls in range(0, 17):
+for cls in range(1, 17):
     for i in range(len(all_boxes[cls])):
         if i % 1000 == 0:
             print(i)

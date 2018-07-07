@@ -65,8 +65,8 @@ imdb = get_imdb('voc_2007_test')
 imdb.competition_mode(False)
 dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
 
-all_boxes = pickle.load(open('../repo/oicr_result/oicr_frcnn_detections.pkl', 'rb'), encoding='latin1')[1:]
-#all_boxes = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
+#all_boxes = pickle.load(open('../repo/oicr_result/oicr_frcnn_detections.pkl', 'rb'), encoding='latin1')[1:]
+all_boxes = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
 #all_boxes = pickle.load(open('/home/seungkwan/repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'rb'), encoding='latin1')
 
 ################# refine and nms ####################################
@@ -95,8 +95,8 @@ for cls in range(20):
     print('%d class refinement complete' % cls)
 
 all_boxes = apply_nms(all_boxes, 0.3)
-#pickle.dump(all_boxes, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
-pickle.dump(all_boxes, open('../repo/oicr_result/oicr_frcnn_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
+pickle.dump(all_boxes, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
+#pickle.dump(all_boxes, open('../repo/oicr_result/oicr_frcnn_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
 
 ################################################################################
 

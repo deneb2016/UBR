@@ -44,7 +44,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--epochs', dest='max_epochs',
                         help='number of epochs to train',
-                        default=1000, type=int)
+                        default=100, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=10, type=int)
@@ -114,7 +114,7 @@ def validate(model, random_box_generator, criterion, dataset):
     tot_loss = 0
     tot_cnt = 0
 
-    for step in range(1, len(dataset) + 1):
+    for step in range(1, 1000 + 1):
         im_data, gt_boxes, box_labels, image_level_label, im_scale, raw_img, im_id, _ = dataset[step - 1]
         data_height = im_data.size(1)
         data_width = im_data.size(2)
@@ -124,9 +124,9 @@ def validate(model, random_box_generator, criterion, dataset):
         # generate random box from given gt box
         # the shape of rois is (n, 5), the first column is not used
         # so, rois[:, 1:5] is [xmin, ymin, xmax, ymax]
-        num_per_base = 50
+        num_per_base = 10
         if num_gt_box > 4:
-            num_per_base = 200 // num_gt_box
+            num_per_base = 50 // num_gt_box
 
         rois = torch.zeros((num_per_base * num_gt_box, 5))
         cnt = 0
@@ -152,6 +152,9 @@ def validate(model, random_box_generator, criterion, dataset):
             loss = loss.mean()
             tot_loss += loss.data[0]
             tot_cnt += 1
+
+        if step % 1000 == 0:
+            print(step)
 
     model.train()
     return tot_loss / tot_cnt
@@ -190,6 +193,15 @@ def train():
         pdb.set_trace()
 
     UBR.create_architecture()
+    # for key, value in dict(UBR.base.named_parameters()).items():
+    #     if value.requires_grad:
+    #         value.requires_grad = False
+    # for key, value in dict(UBR.top.named_parameters()).items():
+    #     if value.requires_grad:
+    #         value.requires_grad = False
+    # for key, value in dict(UBR.bbox_pred_layer.named_parameters()).items():
+    #     if value.requires_grad:
+    #         value.requires_grad = False
 
     params = []
     for key, value in dict(UBR.named_parameters()).items():
@@ -225,11 +237,10 @@ def train():
 
     random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
 
-    # tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset)
-    # print('[net %s][session %d] transfer validation loss: %.4f' % (args.net, args.session, tval_loss))
-    # log_file.write(
-    #     '[net %s][session %d] transfer validation loss: %.4f\n' % (args.net, args.session, tval_loss))
-    # log_file.flush()
+    tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset)
+    print('[net %s][session %d] transfer validation loss: %.4f' % (args.net, args.session, tval_loss))
+    log_file.write('[net %s][session %d] transfer validation loss: %.4f\n' % (args.net, args.session, tval_loss))
+    log_file.flush()
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
@@ -336,18 +347,18 @@ def train():
             log_file.write('[net %s][session %d][epoch %2d] transfer validation loss: %.4f\n' % (args.net, args.session, epoch, tval_loss))
             log_file.flush()
 
-            # save_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.session, epoch))
-            # checkpoint = dict()
-            # checkpoint['net'] = args.net
-            # checkpoint['session'] = args.session
-            # checkpoint['epoch'] = epoch + 1
-            # checkpoint['model'] = UBR.state_dict()
-            # checkpoint['optimizer'] = optimizer.state_dict()
-            # checkpoint['patience'] = patience
-            # checkpoint['last_optima'] = last_optima
-            #
-            # save_checkpoint(checkpoint, save_name)
-            # print('save model: {}'.format(save_name))
+            save_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.session, epoch))
+            checkpoint = dict()
+            checkpoint['net'] = args.net
+            checkpoint['session'] = args.session
+            checkpoint['epoch'] = epoch + 1
+            checkpoint['model'] = UBR.state_dict()
+            checkpoint['optimizer'] = optimizer.state_dict()
+            checkpoint['patience'] = patience
+            checkpoint['last_optima'] = last_optima
+
+            save_checkpoint(checkpoint, save_name)
+            print('save model: {}'.format(save_name))
 
     log_file.close()
 

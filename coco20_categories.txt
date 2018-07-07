@@ -1,0 +1,21 @@
+traffic light
+fire hydrant
+stop sign
+parking meter
+bench
+frisbee
+skis
+snowboard
+sports ball
+kite
+baseball bat
+baseball glove
+skateboard
+surfboard
+tennis racket
+wine glass
+cup
+fork
+knife
+spoon
+bowl
