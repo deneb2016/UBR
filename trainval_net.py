@@ -229,7 +229,7 @@ def train():
         assert args.net == checkpoint['net']
         args.start_epoch = checkpoint['epoch']
         UBR.load_state_dict(checkpoint['model'])
-        if args.no_optim is not:
+        if not args.no_optim:
             if 'patience' in checkpoint:
                 patience = checkpoint['patience']
             if 'last_optima' in checkpoint:
