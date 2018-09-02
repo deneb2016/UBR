@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 CUDA_PATH=/usr/local/cuda/
+export CXXFLAGS="-std=c++11"
+export CFLAGS="-std=c99"
 
 export PATH=$CUDA_PATH/bin:$PATH
 
