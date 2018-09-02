@@ -47,7 +47,7 @@ def remove_nontarget_categories(image_set, object_set, include_categories):
 
 
 np.random.seed(1085)
-anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_train2017.json'))
+anno = json.load(open('/home/seungkwan/ubr/data/coco/annotations/instances_train2014.json'))
 
 want_classes = [line.rstrip() for line in open('coco60_categories.txt')]
 include_categories = {}
@@ -83,4 +83,4 @@ new_anno['annotations'] = object_set
 NUM_IMAGES = len(new_anno['images'])
 NUM_BOXES = len(new_anno['annotations'])
 print(len(new_anno['images']), len(new_anno['annotations']))
-#json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/coco60_train_%d_%d.json' % (NUM_IMAGES, NUM_BOXES), 'w'))
+json.dump(new_anno, open('/home/seungkwan/data/coco/annotations/coco60_train2014_%d_%d.json' % (NUM_IMAGES, NUM_BOXES), 'w'))

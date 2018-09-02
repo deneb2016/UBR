@@ -49,10 +49,10 @@ def draw_box(boxes, col=None):
             c = np.random.rand(3)
         else:
             c = col
-        plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
-        plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
-        plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
-        plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
+        plt.hlines(ymin, xmin - 1, xmax + 1, colors=c, lw=3)
+        plt.hlines(ymax, xmin - 1, xmax + 1, colors=c, lw=3)
+        plt.vlines(xmin, ymin - 1, ymax + 1, colors=c, lw=3)
+        plt.vlines(xmax, ymin - 1, ymax + 1, colors=c, lw=3)
 
 
 def discovery_object(img, num_prop, edge_iou_th=0.5, nms_iou=0.5, num_refine=1):
@@ -117,12 +117,12 @@ st = time.time()
 tp = 0
 P = 0
 
-for i in range(len(dataset)):
+for i in range(len(perm)):
     img, gt, h, w, id = dataset[perm[i]]
     result = discovery_object(img, args.K, args.edge_iou, args.nms_iou, args.num_refine)
 
     #np.save('/home/seungkwan/repo/proposals/VOC07_trainval_ubr64523_%d_%.1f_%.1f_%d/%s' % (args.K, args.edge_iou, args.nms_iou, args.num_refine, id[1]), result)
-    savemat('/home/seungkwan/repo/proposals/VOC07_%s_1/%s' % (args.dataset, id[1]), {'proposals': result + 1}) # this is because matlab use one-based index
+    #savemat('/home/seungkwan/repo/proposals/VOC07_%s_1/%s' % (args.dataset, id[1]), {'proposals': result + 1}) # this is because matlab use one-based index
 
     # gt = gt[:, :4]
     # gt[:, 0] *= w
@@ -140,8 +140,41 @@ for i in range(len(dataset)):
         print(i, time.time() - st)
         st = time.time()
 
-    # plt.imshow(img)
-    # draw_box(result)
-    # draw_box(result[0:1, :], 'black')
-    # plt.show()
+    plt.imshow(img)
+    result[:, 0].clip(5, w - 6)
+    result[:, 2].clip(5, w - 6)
+    result[:, 1].clip(5, h - 6)
+    result[:, 3].clip(5, h - 6)
 
+    draw_box(result)
+    draw_box(result[0:1, :], 'black')
+    plt.show()
+
+# ids = ['000053', '000149', ]
+# for i in range(len(ids)):
+#     img, gt, h, w, id = dataset.pull_item_by_id(ids[i])
+#     result = discovery_object(img, args.K, args.edge_iou, args.nms_iou, args.num_refine)
+#
+#     #np.save('/home/seungkwan/repo/proposals/VOC07_trainval_ubr64523_%d_%.1f_%.1f_%d/%s' % (args.K, args.edge_iou, args.nms_iou, args.num_refine, id[1]), result)
+#     #savemat('/home/seungkwan/repo/proposals/VOC07_%s_1/%s' % (args.dataset, id[1]), {'proposals': result + 1}) # this is because matlab use one-based index
+#
+#     # gt = gt[:, :4]
+#     # gt[:, 0] *= w
+#     # gt[:, 2] *= w
+#     # gt[:, 1] *= h
+#     # gt[:, 3] *= h
+#     #
+#     # gt = torch.FloatTensor(gt)
+#     # result = torch.FloatTensor(result)
+#     # iou = jaccard(result, gt)
+#     # P = P + gt.size(0)
+#     # tp = tp + iou.max(0)[0].gt(0.5).sum()
+#
+#     if i % 10 == 9:
+#         print(i, time.time() - st)
+#         st = time.time()
+#
+#     plt.imshow(img)
+#     draw_box(result)
+#     draw_box(result[0:1, :], 'black')
+#     plt.show()

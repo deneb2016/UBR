@@ -135,6 +135,19 @@ class VOCDetection(data.Dataset):
         return img, target, height, width, img_id
         # return torch.from_numpy(img), target, height, width
 
+    def pull_item_by_id(self, img_id):
+        img_id = (os.path.join(self.root, 'VOC' + '2007'), img_id)
+        target = ET.parse(self._annopath % img_id).getroot()
+        img = imread(self._imgpath % img_id)
+        height, width, channels = img.shape
+
+        if self.target_transform is not None:
+            target = self.target_transform(target, width, height)
+
+        target = np.array(target)
+        return img, target, height, width, img_id
+        # return torch.from_numpy(img), target, height, width
+
     def pull_image(self, index):
         '''Returns the original image object at index in PIL form
 

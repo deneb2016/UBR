@@ -16,10 +16,11 @@ def draw_box(boxes, col=None):
             c = np.random.rand(3)
         else:
             c = col
-        plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
-        plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
-        plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
-        plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
+        plt.hlines(ymin, xmin - 1, xmax + 1, colors=c, lw=3)
+        plt.hlines(ymax, xmin - 1, xmax + 1, colors=c, lw=3)
+        plt.vlines(xmin, ymin - 1, ymax + 1, colors=c, lw=3)
+        plt.vlines(xmax, ymin - 1, ymax + 1, colors=c, lw=3)
+
 
 
 def apply_nms(all_boxes, thresh):
@@ -49,7 +50,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='eval')
 
-    parser.add_argument('--model_name', default='UBR_VGG_100113_15' ,type=str)
+    parser.add_argument('--model_name', default='UBR_RES_FC3' ,type=str)
 
     args = parser.parse_args()
     return args
@@ -61,7 +62,7 @@ model_name = args.model_name
 
 imdb = get_imdb('voc_2007_test')
 imdb.competition_mode(False)
-dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')])
+dataset = VOCDetection('./data/VOCdevkit2007', [('2007', 'test')], True)
 print(len(dataset))
 
 all_boxes = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), encoding='latin1')
@@ -69,7 +70,7 @@ all_boxes = apply_nms(all_boxes, 0.3)
 
 ################# refine and nms ####################################
 UBR = UBRWrapper('../repo/ubr/%s.pth' % model_name)
-for cls in range(1, 17):
+for cls in range(11, 20):
     for i in range(len(all_boxes[cls])):
         if i % 1000 == 0:
             print(i)
@@ -83,9 +84,13 @@ for cls in range(1, 17):
 
         img, gt, h, w, id = dataset[i]
         boxes = all_boxes[cls][i][:, :4]
-
-        for K in range(1, 4):
-            refined_boxes = UBR.query(img, boxes.copy(), K)
+        result = UBR.query(img, boxes.copy(), 3)
+        for K in range(3):
+            refined_boxes = result[K]
+            refined_boxes[:, 0].clip(10, w - 10)
+            refined_boxes[:, 2].clip(10, w - 10)
+            refined_boxes[:, 1].clip(10, h - 10)
+            refined_boxes[:, 3].clip(10, h - 10)
             plt.imshow(img)
             draw_box(boxes[:1], 'yellow')
             draw_box(refined_boxes[:1], 'blue')
