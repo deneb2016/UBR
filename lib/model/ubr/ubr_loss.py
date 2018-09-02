@@ -57,7 +57,7 @@ class UBR_IoULoss(nn.Module):
         #print(iou)
         max_iou, max_gt_idx = torch.max(iou, 1)
         mask = max_iou.gt(self._overlap_threshold)
-        if mask.sum().data[0] == 0:
+        if mask.float().sum().data[0] == 0:
             return None, None, None, None
         mask = mask.unsqueeze(1).expand(rois.size(0), 4)
 

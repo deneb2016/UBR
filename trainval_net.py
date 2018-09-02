@@ -110,6 +110,11 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--not_load_optim', dest='no_optim', action='store_true')
 
+    parser.add_argument('--use_prop', action='store_true')
+    parser.add_argument('--prop_method', type=str)
+    parser.add_argument('--prop_topk', default=2000, type=int)
+    parser.add_argument('--prop_min_scale', default=10, type=int)
+
     args = parser.parse_args()
     return args
 
@@ -126,13 +131,13 @@ def draw_box(boxes, col=None):
         plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
 
 
-def validate(model, random_box_generator, criterion, dataset):
+def validate(model, random_box_generator, criterion, dataset, args):
     model.eval()
     tot_loss = 0
     tot_cnt = 0
 
     for step in range(1, len(dataset) + 1):
-        im_data, gt_boxes, box_labels, image_level_label, im_scale, raw_img, im_id, _ = dataset[step - 1]
+        im_data, gt_boxes, box_labels, proposals, prop_scores, image_level_label, im_scale, raw_img, im_id, _ = dataset[step - 1]
         data_height = im_data.size(1)
         data_width = im_data.size(2)
         im_data = Variable(im_data.unsqueeze(0).cuda())
@@ -145,18 +150,28 @@ def validate(model, random_box_generator, criterion, dataset):
         if num_gt_box > 4:
             num_per_base = 200 // num_gt_box
 
-        rois = torch.zeros((num_per_base * num_gt_box, 5))
-        cnt = 0
-        for i in range(num_gt_box):
-            here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
-            if here is None:
+        if random_box_generator is None:
+            proposals = sample_pos_prop(proposals, gt_boxes, args.iou_th)
+            if proposals is None:
                 print('@@@@@ val no box @@@@@')
                 continue
-            rois[cnt:cnt + here.size(0), :] = here
-            cnt += here.size(0)
-        if cnt == 0:
-            continue
-        rois = rois[:cnt, :]
+
+            rois = torch.zeros((proposals.size(0), 5))
+            rois[:, 1:] = proposals
+        else:
+            rois = torch.zeros((num_per_base * num_gt_box, 5))
+            cnt = 0
+            for i in range(num_gt_box):
+                here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
+                if here is None:
+                    print('@@@@@aaa val no box @@@@@')
+                    continue
+                rois[cnt:cnt + here.size(0), :] = here
+                cnt += here.size(0)
+            if cnt == 0:
+                continue
+            rois = rois[:cnt, :]
+
         rois = Variable(rois.cuda())
         gt_boxes = Variable(gt_boxes.cuda())
 
@@ -174,6 +189,14 @@ def validate(model, random_box_generator, criterion, dataset):
     return tot_loss / tot_cnt
 
 
+def sample_pos_prop(proposals, gt_boxes, iou_th):
+    iou = jaccard(proposals, gt_boxes)
+    max_overlap, _ = iou.max(dim=1)
+    if max_overlap.gt(iou_th).sum() == 0:
+        return None
+    keep = torch.nonzero(max_overlap.gt(iou_th)).view(-1)
+    return proposals[keep]
+
 def train():
     args = parse_args()
 
@@ -187,7 +210,8 @@ def train():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    train_dataset = TDetDataset([args.dataset + '_train'], training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd, warping=args.warping)
+    train_dataset = TDetDataset([args.dataset + '_train'], training=True, multi_scale=args.multiscale, rotation=args.rotation, pd=args.pd, warping=args.warping,
+                                prop_method=args.prop_method, prop_min_scale=args.prop_min_scale, prop_topk=args.prop_topk)
     val_dataset = TDetDataset([args.dataset + '_val'], training=False)
     tval_dataset = TDetDataset(['coco_voc_val'], training=False)
 
@@ -253,7 +277,9 @@ def train():
     elif args.loss == 'iou':
         criterion = UBR_IoULoss(args.iou_th)
 
-    random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
+    if not args.use_prop:
+        random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
+
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
@@ -267,7 +293,7 @@ def train():
         rand_perm = np.random.permutation(len(train_dataset))
         for step in range(1, len(train_dataset) + 1):
             index = rand_perm[step - 1]
-            im_data, gt_boxes, box_labels, image_level_label, im_scale, raw_img, im_id, _ = train_dataset[index]
+            im_data, gt_boxes, box_labels, proposals, prop_scores, image_level_label, im_scale, raw_img, im_id, _ = train_dataset[index]
 
             data_height = im_data.size(1)
             data_width = im_data.size(2)
@@ -282,19 +308,30 @@ def train():
             if num_gt_box > 4:
                 num_per_base = 200 // num_gt_box
 
-            rois = torch.zeros((num_per_base * num_gt_box, 5))
-            cnt = 0
-            for i in range(num_gt_box):
-                here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
-                if here is None:
+            if args.use_prop:
+                proposals = sample_pos_prop(proposals, gt_boxes, args.iou_th)
+                if proposals is None:
+                    log_file.write('@@@@ no box @@@@\n')
+                    print('@@@@@ no box @@@@@')
                     continue
-                rois[cnt:cnt + here.size(0), :] = here
-                cnt += here.size(0)
-            if cnt == 0:
-                log_file.write('@@@@ no box @@@@\n')
-                print('@@@@@ no box @@@@@')
-                continue
-            rois = rois[:cnt, :]
+
+                rois = torch.zeros((proposals.size(0), 5))
+                rois[:, 1:] = proposals
+            else:
+                rois = torch.zeros((num_per_base * num_gt_box, 5))
+                cnt = 0
+                for i in range(num_gt_box):
+                    here = random_box_generator.get_rand_boxes(gt_boxes[i, :], num_per_base, data_height, data_width)
+                    if here is None:
+                        continue
+                    rois[cnt:cnt + here.size(0), :] = here
+                    cnt += here.size(0)
+                if cnt == 0:
+                    log_file.write('@@@@ no box @@@@\n')
+                    print('@@@@@ no box @@@@@')
+                    continue
+                rois = rois[:cnt, :]
+
             mean_boxes_per_iter += rois.size(0)
             rois = Variable(rois.cuda())
             gt_boxes = Variable(gt_boxes.cuda())
@@ -346,8 +383,8 @@ def train():
                 log_file.write('@@@@@@@nan@@@@@@@@\n')
                 return
 
-        val_loss = validate(UBR, random_box_generator, criterion, val_dataset)
-        tval_loss = validate(UBR, random_box_generator, criterion, tval_dataset)
+        val_loss = validate(UBR, None if args.use_prop else random_box_generator, criterion, val_dataset, args)
+        tval_loss = validate(UBR, None if args.use_prop else random_box_generator, criterion, tval_dataset, args)
         print('[net %s][session %d][epoch %2d] validation loss: %.4f' % (args.net, args.session, epoch, val_loss))
         log_file.write('[net %s][session %d][epoch %2d] validation loss: %.4f\n' % (args.net, args.session, epoch, val_loss))
         print('[net %s][session %d][epoch %2d] transfer validation loss: %.4f' % (args.net, args.session, epoch, tval_loss))

@@ -6,8 +6,17 @@ from scipy.io import loadmat
 
 
 class COCOLoader:
-    def __init__(self, anno_path, img_path):
+    def __init__(self, anno_path, img_path, prop_method):
         self.items = []
+
+        if prop_method == 'ss':
+            prop_dir = os.path.join('../data', 'coco_proposals', 'selective_search')
+        elif prop_method == 'eb':
+            prop_dir = os.path.join('../data', 'coco_proposals', 'edge_boxes_70')
+        elif prop_method == 'mcg':
+            prop_dir = os.path.join('../data', 'coco_proposals', 'MCG')
+        else:
+            raise Exception('Undefined proposal name')
 
         print('dataset loading...' + anno_path)
         anno = json.load(open(anno_path))
@@ -41,11 +50,21 @@ class COCOLoader:
             id = img['id']
             assert id in box_set and len(box_set[id]) > 0
             assert id in category_set and len(category_set[id]) > 0
-
             data['id'] = id
             data['boxes'] = np.array(box_set[id])
             data['categories'] = np.array(category_set[id], np.long)
             data['img_full_path'] = img_path + img['file_name']
+
+            name1 = 'COCO_train2014_%012d' % id
+            name2 = 'COCO_val2014_%012d' % id
+            path1 = os.path.join(prop_dir, 'mat', name1[:14], name1[:22], '%s.mat' % name1)
+            path2 = os.path.join(prop_dir, 'mat', name2[:14], name2[:22], '%s.mat' % name2)
+
+            if os.path.exists(path1):
+                data['prop_path'] = path1
+            else:
+                data['prop_path'] = path2
+
             self.items.append(data)
 
         print('dataset loading complete')

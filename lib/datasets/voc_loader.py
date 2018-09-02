@@ -17,7 +17,15 @@ VOC_CLASSES = [
 
 
 class VOCLoader:
-    def __init__(self, root, image_sets):
+    def __init__(self, root, image_sets, prop_method):
+        if prop_method == 'ss':
+            prop_dir = os.path.join('../data', 'voc07_proposals', 'selective_search')
+        elif prop_method == 'eb':
+            prop_dir = os.path.join('../data', 'voc07_proposals', 'edge_boxes_70')
+        elif prop_method == 'mcg':
+            prop_dir = os.path.join('../data', 'voc07_proposals', 'MCG2015')
+        else:
+            raise Exception('Undefined proposal name')
         self.items = []
         self.num_classes = 0
         self.name_to_index = dict(zip(VOC_CLASSES, range(len(VOC_CLASSES))))
@@ -48,6 +56,7 @@ class VOCLoader:
                 data['boxes'] = np.array(box_set)
                 data['categories'] = np.array(category_set, np.long)
                 data['img_full_path'] = os.path.join(rootpath, 'JPEGImages', line.strip() + '.jpg')
+                data['prop_path'] = os.path.join(prop_dir, 'mat', id[:4], '%s.mat' % id)
                 self.items.append(data)
 
         print('dataset loading complete')

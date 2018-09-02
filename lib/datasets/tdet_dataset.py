@@ -10,7 +10,7 @@ from lib.datasets.voc_loader import VOCLoader, VOCLoaderFewShot
 from lib.model.utils.augmentations import PhotometricDistort
 from lib.model.utils.box_utils import to_point_form, to_center_form
 from skimage.transform import PiecewiseAffineTransform, warp
-
+from scipy.io import loadmat
 
 def make_transform(image, boxes):
     height, width = image.shape[0], image.shape[1]
@@ -57,7 +57,7 @@ def make_transform(image, boxes):
 
 
 class TDetDataset(data.Dataset):
-    def __init__(self, dataset_names, training, multi_scale=False, rotation=False, pd=False, warping=False):
+    def __init__(self, dataset_names, training, multi_scale=False, rotation=False, pd=False, warping=False, prop_method='ss', prop_min_scale=10, prop_topk=2000):
         self.training = training
         self.multi_scale = multi_scale
         self.rotation = rotation
@@ -69,26 +69,29 @@ class TDetDataset(data.Dataset):
             self.pd = None
 
         self._dataset_loaders = []
+        self.prop_min_scale = prop_min_scale
+        self.prop_topk = prop_topk
+        self.prop_method = prop_method
 
         for name in dataset_names:
             if name == 'coco60_train':
-                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco60_train_21413_61353.json', './data/coco/images/train2017/'))
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco60_train_21413_61353.json', './data/coco/images/train2017/', prop_method))
             elif name == 'coco40_train':
-                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco40_train_21413_62893.json', './data/coco/images/train2017/'))
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco40_train_21413_62893.json', './data/coco/images/train2017/', prop_method))
             elif name == 'coco20_train':
-                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco20_train_21413_52511.json', './data/coco/images/train2017/'))
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco20_train_21413_52511.json', './data/coco/images/train2017/', prop_method))
             elif name == 'coco60_val':
-                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco60_val_900_2575.json', './data/coco/images/val2017/'))
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco60_val_900_2575.json', './data/coco/images/val2017/', prop_method))
             elif name == 'coco40_val':
-                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco40_val_1000_2902.json', './data/coco/images/val2017/'))
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco40_val_1000_2902.json', './data/coco/images/val2017/', prop_method))
             elif name == 'coco20_val':
-                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco20_val_1000_2422.json', './data/coco/images/val2017/'))
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/coco20_val_1000_2422.json', './data/coco/images/val2017/', prop_method))
             elif name == 'coco_voc_val':
-                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/voc20_val_740_2844.json', './data/coco/images/val2017/'))
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/voc20_val_740_2844.json', './data/coco/images/val2017/', prop_method))
             elif name == 'voc07_trainval':
-                self._dataset_loaders.append(VOCLoader('./data/VOCdevkit2007', [('2007', 'trainval')]))
+                self._dataset_loaders.append(VOCLoader('./data/VOCdevkit2007', [('2007', 'trainval')], prop_method))
             elif name == 'voc07_test':
-                self._dataset_loaders.append(VOCLoader('./data/VOCdevkit2007', [('2007', 'test')]))
+                self._dataset_loaders.append(VOCLoader('./data/VOCdevkit2007', [('2007', 'test')], prop_method))
             elif name == 'voc07_few_shot_1':
                 self._dataset_loaders.append(VOCLoaderFewShot('./data/VOCdevkit2007', [('2007', 'trainval')], 1))
             elif name == 'voc07_few_shot_2':
@@ -98,9 +101,30 @@ class TDetDataset(data.Dataset):
             else:
                 print('@@@@@@@@@@ undefined dataset @@@@@@@@@@@')
 
+    def unique_boxes(self, boxes, scale=1.0):
+        """Return indices of unique boxes."""
+        v = np.array([1, 1e3, 1e6, 1e9])
+        hashes = np.round(boxes * scale).dot(v)
+        _, index = np.unique(hashes, return_index=True)
+        return np.sort(index)
+
+    def select_proposals(self, proposals, scores):
+        keep = self.unique_boxes(proposals)
+        proposals = proposals[keep]
+        scores = scores[keep]
+        w = proposals[:, 2] - proposals[:, 0] + 1
+        h = proposals[:, 3] - proposals[:, 1] + 1
+        keep = np.nonzero((w >= self.prop_min_scale) * (h >= self.prop_min_scale))[0]
+        proposals = proposals[keep]
+        scores = scores[keep]
+        order = np.argsort(-scores)
+        order = order[:min(self.prop_topk, order.shape[0])]
+        return proposals[order], scores[order]
+
     def __getitem__(self, index):
-        im, gt_boxes, gt_categories, id, loader_index = self.get_raw_data(index)
+        im, gt_boxes, gt_categories, proposals, prop_scores, id, loader_index = self.get_raw_data(index)
         raw_img = im.copy()
+        proposals, prop_scores = self.select_proposals(proposals, prop_scores)
 
         if self.warping and np.random.rand() > 0.8:
             src, dst = make_transform(im, gt_boxes)
@@ -121,6 +145,11 @@ class TDetDataset(data.Dataset):
             flipped_gt_boxes[:, 0] = im.shape[1] - gt_boxes[:, 2]
             flipped_gt_boxes[:, 2] = im.shape[1] - gt_boxes[:, 0]
             gt_boxes = flipped_gt_boxes
+
+            flipped_xmin = im.shape[1] - proposals[:, 2]
+            flipped_xmax = im.shape[1] - proposals[:, 0]
+            proposals[:, 0] = flipped_xmin
+            proposals[:, 2] = flipped_xmax
 
         if self.training and self.rotation:
             gt_boxes = to_center_form(gt_boxes)
@@ -170,17 +199,20 @@ class TDetDataset(data.Dataset):
         im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)
 
         gt_boxes = gt_boxes * im_scale
+        proposals = proposals * im_scale
 
         # to tensor
         data = torch.from_numpy(im)
         data = data.permute(2, 0, 1).contiguous()
         gt_boxes = torch.from_numpy(gt_boxes)
+        proposals = torch.from_numpy(proposals)
+        prop_scores = torch.from_numpy(prop_scores)
         gt_categories = torch.from_numpy(gt_categories)
 
         image_level_label = torch.zeros(80)
         for label in gt_categories:
             image_level_label[label] = 1.0
-        return data, gt_boxes, gt_categories, image_level_label, im_scale, raw_img, id, loader_index
+        return data, gt_boxes, gt_categories, proposals, prop_scores, image_level_label, im_scale, raw_img, id, loader_index
 
     def get_raw_data(self, index):
         here = None
@@ -202,9 +234,14 @@ class TDetDataset(data.Dataset):
             im = np.concatenate((im, im, im), axis=2)
 
         gt_boxes = here['boxes'].copy()
+        raw_prop = loadmat(here['prop_path'])
+        proposals = raw_prop['boxes'].astype(np.float32)
+        prop_scores = raw_prop['scores'][:, 0].astype(np.float32)
+        if self.prop_method == 'ss':
+            prop_scores = -prop_scores
         gt_categories = here['categories'].copy()
         id = here['id']
-        return im, gt_boxes, gt_categories, id, loader_index
+        return im, gt_boxes, gt_categories, proposals, prop_scores, id, loader_index
 
     def __len__(self):
         tot_len = 0
