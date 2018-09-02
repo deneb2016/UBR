@@ -195,7 +195,11 @@ def sample_pos_prop(proposals, gt_boxes, iou_th):
     if max_overlap.gt(iou_th).sum() == 0:
         return None
     keep = torch.nonzero(max_overlap.gt(iou_th)).view(-1)
-    return proposals[keep]
+    proposals = proposals[keep]
+    if proposals.size(0) > 150:
+        proposals = proposals[torch.LongTensor(np.random.choice(proposals.size(0), 150, replace=False))]
+    return proposals
+
 
 def train():
     args = parse_args()
@@ -280,7 +284,6 @@ def train():
     if not args.use_prop:
         random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
 
-
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode
         UBR.train()
@@ -311,8 +314,8 @@ def train():
             if args.use_prop:
                 proposals = sample_pos_prop(proposals, gt_boxes, args.iou_th)
                 if proposals is None:
-                    log_file.write('@@@@ no box @@@@\n')
-                    print('@@@@@ no box @@@@@')
+                    # log_file.write('@@@@ no box @@@@\n')
+                    # print('@@@@@ no box @@@@@')
                     continue
 
                 rois = torch.zeros((proposals.size(0), 5))
