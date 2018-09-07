@@ -114,6 +114,8 @@ def parse_args():
     parser.add_argument('--prop_method', type=str)
     parser.add_argument('--prop_topk', default=2000, type=int)
     parser.add_argument('--prop_min_scale', default=10, type=int)
+    parser.add_argument('--alpha', default=0.35, type=float)
+    parser.add_argument('--beta', default=0.5, type=float)
 
     args = parser.parse_args()
     return args
@@ -282,7 +284,7 @@ def train():
         criterion = UBR_IoULoss(args.iou_th)
 
     if not args.use_prop:
-        random_box_generator = NaturalUniformBoxGenerator(args.iou_th)
+        random_box_generator = NaturalUniformBoxGenerator(args.iou_th, pos_th=args.alpha, scale_min=1-args.beta, scale_max=1+args.beta)
 
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         # setting to train mode

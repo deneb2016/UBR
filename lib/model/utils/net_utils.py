@@ -39,7 +39,7 @@ def clip_gradient(models, clip_norm):
     for model in models:
         for p in model.parameters():
             if p.requires_grad and p.grad is not None:
-                modulenorm = p.grad.data.norm()
+                modulenorm = p.grad.data.norm().item()
                 totalnorm += modulenorm ** 2
     totalnorm = np.sqrt(totalnorm)
 

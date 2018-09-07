@@ -34,7 +34,7 @@ class VOCLoader:
             rootpath = os.path.join(root, 'VOC' + year)
             for line in open(os.path.join(rootpath, 'ImageSets', 'Main', name + '.txt')):
                 data = {}
-                id = 'VOC' + year + '_' + line.strip()
+                id = line.strip()
                 target = ET.parse(os.path.join(rootpath, 'Annotations', line.strip() + '.xml'))
 
                 box_set = []
