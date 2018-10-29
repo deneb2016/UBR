@@ -53,7 +53,7 @@ def parse_args():
                         help='directory to save models', default="../repo/ubr")
     parser.add_argument('--save_interval', dest='save_interval',
                         help='number of iterations to save',
-                        default=1, type=int)
+                        default=3, type=int)
 
     parser.add_argument('--dataset', type=str, default='coco60')
     parser.add_argument('--nw', dest='num_workers',
@@ -111,11 +111,12 @@ def parse_args():
     parser.add_argument('--not_load_optim', dest='no_optim', action='store_true')
 
     parser.add_argument('--use_prop', action='store_true')
-    parser.add_argument('--prop_method', type=str)
+    parser.add_argument('--prop_method', type=str, default='ss')
     parser.add_argument('--prop_topk', default=2000, type=int)
     parser.add_argument('--prop_min_scale', default=10, type=int)
     parser.add_argument('--alpha', default=0.35, type=float)
     parser.add_argument('--beta', default=0.5, type=float)
+    parser.add_argument('--decay_patience', default=1, type=int)
 
     args = parser.parse_args()
     return args
@@ -403,7 +404,7 @@ def train():
             if last_optima > val_loss:
                 last_optima = val_loss
 
-            if patience >= 2:
+            if patience >= args.decay_patience:
                 adjust_learning_rate(optimizer, args.lr_decay_gamma)
                 lr *= args.lr_decay_gamma
                 patience = 0
@@ -412,7 +413,7 @@ def train():
                 adjust_learning_rate(optimizer, args.lr_decay_gamma)
                 lr *= args.lr_decay_gamma
 
-        if epoch % args.save_interval == 0:
+        if epoch % args.save_interval == 0 or lr < 0.000005:
             save_name = os.path.join(output_dir, '{}_{}_{}.pth'.format(args.net, args.session, epoch))
             checkpoint = dict()
             checkpoint['net'] = args.net
@@ -425,6 +426,9 @@ def train():
 
             save_checkpoint(checkpoint, save_name)
             print('save model: {}'.format(save_name))
+
+        if lr < 0.000005:
+            break
 
     log_file.close()
 

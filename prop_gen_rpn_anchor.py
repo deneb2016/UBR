@@ -5,37 +5,37 @@ import math
 from ubr_wrapper import  UBRWrapperCUDA
 import time
 from lib.model.utils.box_utils import jaccard
-aspect_ratios = [0.5, 0.66, 1.0, 1.5, 2.0]
-#achor_sizes = [30, 50, 100, 200, 300, 400]
-achor_sizes = [32, 48, 72, 108, 162, 243]
-
+import itertools
+aspect_ratios = [0.5, 1.0, 2.0]
+anchor_scales = [8, 16, 32]
+stride = 16
 
 
 def generate_anchor_boxes(im_height, im_width):
+    im_scale = 600 / min(im_height, im_width)
+    im_height = im_height * im_scale
+    im_width = im_width * im_scale
     ret = []
-    num_per_scale = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-    for i, scale in enumerate(achor_sizes):
-        center_x = scale / 2
-        while center_x < im_width:
-            center_y = scale / 2
-            while center_y < im_height:
-                for ratio in aspect_ratios:
-                    a = math.sqrt(ratio)
-                    w = a * scale
-                    h = scale / a
-                    ret.append(np.array([center_x - w / 2, center_y - h / 2, center_x + w / 2, center_y + h / 2, i]))
-                    num_per_scale[i] += 1
-                center_y += scale / 2
+    cx = stride / 2
+    while cx < im_width:
+        cy = stride / 2
+        while cy < im_height:
+            for scale, ratio in itertools.product(anchor_scales, aspect_ratios):
+                a = math.sqrt(ratio)
+                w = scale * stride * a
+                h = scale * stride / a
 
-            center_x += scale / 2
+                xmin, ymin, xmax, ymax = cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2
+                if xmin < 0 or ymin < 0 or xmax >= im_width or ymax >= im_height:
+                    continue
+                ret.append(np.array([xmin, ymin, xmax, ymax]))
+
+            cy += stride
+        cx += stride
 
     ret = np.array(ret)
-    ret[:, 4] = num_per_scale[ret[:, 4].astype(np.int)]
-    ret[:, 0] = np.clip(ret[:, 0], 1, im_width - 2)
-    ret[:, 1] = np.clip(ret[:, 1], 1, im_height - 2)
-    ret[:, 2] = np.clip(ret[:, 2], 1, im_width - 2)
-    ret[:, 3] = np.clip(ret[:, 3], 1, im_height - 2)
+    ret = ret / im_scale
     return ret
 
 
@@ -57,10 +57,9 @@ def draw_box(boxes, col=None):
 
 def discovery_object(img, num_prop, edge_iou_th=0.5, nms_iou=0.5, num_refine=1):
     rand_boxes = generate_anchor_boxes(img.shape[0], img.shape[1])
-    print(rand_boxes.shape)
     refined_boxes = ubr.query(img, rand_boxes[:, :4], num_refine)
     iou = jaccard(refined_boxes, refined_boxes)
-    degree = (iou.gt(edge_iou_th).float()).sum(1) / torch.sqrt(torch.FloatTensor(rand_boxes[:, 4]).cuda())
+    degree = (iou.gt(edge_iou_th).float()).sum(1) #/ torch.sqrt(torch.FloatTensor(rand_boxes[:, 4]).cuda())
     #degree = degree / torch.log(rand_boxes[:, 4])
     #degree = iou.gt(edge_iou_th).float().sum(1)
     #degree = torch.exp(iou).sum(1)
@@ -97,6 +96,7 @@ def parse_args():
     parser.add_argument('--nms_iou', default=0.5, type=float)
     parser.add_argument('--num_refine', default=1, type=int)
     parser.add_argument('--dataset', type=str)
+    parser.add_argument('--seed', default=1, type=int)
 
     args = parser.parse_args()
     return args
@@ -106,7 +106,7 @@ args = parse_args()
 dataset = VOCDetection('./data/VOCdevkit2007', [('2007', args.dataset)], keep_difficult=True)
 from scipy.io import savemat
 fail_cnt = 0
-np.random.seed(9213)
+np.random.seed(args.seed)
 
 perm = np.random.permutation(len(dataset))
 
@@ -124,20 +124,20 @@ for i in range(len(perm)):
     #np.save('/home/seungkwan/repo/proposals/VOC07_trainval_ubr64523_%d_%.1f_%.1f_%d/%s' % (args.K, args.edge_iou, args.nms_iou, args.num_refine, id[1]), result)
     #savemat('/home/seungkwan/repo/proposals/VOC07_%s_1/%s' % (args.dataset, id[1]), {'proposals': result + 1}) # this is because matlab use one-based index
 
-    # gt = gt[:, :4]
-    # gt[:, 0] *= w
-    # gt[:, 2] *= w
-    # gt[:, 1] *= h
-    # gt[:, 3] *= h
-    #
-    # gt = torch.FloatTensor(gt)
-    # result = torch.FloatTensor(result)
-    # iou = jaccard(result, gt)
-    # P = P + gt.size(0)
-    # tp = tp + iou.max(0)[0].gt(0.5).sum()
+    gt = gt[:, :4]
+    gt[:, 0] *= w
+    gt[:, 2] *= w
+    gt[:, 1] *= h
+    gt[:, 3] *= h
+
+    gt = torch.FloatTensor(gt)
+    result = torch.FloatTensor(result)
+    iou = jaccard(result, gt)
+    P = P + gt.size(0)
+    tp = tp + iou.max(0)[0].gt(0.5).sum().item()
 
     if i % 10 == 9:
-        print(i, time.time() - st)
+        print(i, time.time() - st, tp / P)
         st = time.time()
 
     # plt.imshow(img)

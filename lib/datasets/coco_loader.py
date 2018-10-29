@@ -6,7 +6,7 @@ from scipy.io import loadmat
 
 
 class COCOLoader:
-    def __init__(self, anno_path, img_path, prop_method):
+    def __init__(self, anno_path, img_path, prop_method, index_offset=20):
         self.items = []
 
         if prop_method == 'ss':
@@ -25,7 +25,7 @@ class COCOLoader:
         cid_to_idx = {}
         #print(anno['categories'])
         for i, cls in enumerate(anno['categories']):
-            cid_to_idx[cls['id']] = i + 20
+            cid_to_idx[cls['id']] = i + index_offset
 
         for i, obj in enumerate(anno['annotations']):
             im_id = obj['image_id']
@@ -48,7 +48,8 @@ class COCOLoader:
         for i, img in enumerate(anno['images']):
             data = {}
             id = img['id']
-            assert id in box_set and len(box_set[id]) > 0
+            if id not in box_set or len(box_set[id]) == 0:
+                continue
             assert id in category_set and len(category_set[id]) > 0
             data['id'] = id
             data['boxes'] = np.array(box_set[id])

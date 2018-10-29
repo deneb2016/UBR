@@ -98,6 +98,11 @@ class TDetDataset(data.Dataset):
                 self._dataset_loaders.append(VOCLoaderFewShot('./data/VOCdevkit2007', [('2007', 'trainval')], 2))
             elif name == 'voc07_few_shot_3':
                 self._dataset_loaders.append(VOCLoaderFewShot('./data/VOCdevkit2007', [('2007', 'trainval')], 3))
+            elif name == 'coco_train':
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/instances_train2017.json', './data/coco/images/train2017/', prop_method, index_offset=0))
+            elif name == 'coco_val':
+                self._dataset_loaders.append(COCOLoader('./data/coco/annotations/instances_val2017.json', './data/coco/images/val2017/', prop_method, index_offset=0))
+
             else:
                 print('@@@@@@@@@@ undefined dataset @@@@@@@@@@@')
 

@@ -77,7 +77,6 @@ class _AnchorTargetLayer(nn.Module):
         self._anchors = self._anchors.type_as(gt_boxes) # move to specific gpu.
         all_anchors = self._anchors.view(1, A, 4) + shifts.view(K, 1, 4)
         all_anchors = all_anchors.view(K * A, 4)
-
         total_anchors = int(K * A)
 
         keep = ((all_anchors[:, 0] >= -self._allowed_border) &
