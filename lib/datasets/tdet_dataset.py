@@ -142,19 +142,19 @@ class TDetDataset(data.Dataset):
         im = im[:, :, ::-1]
 
         # random flip
-        if self.training and np.random.rand() > 0.5:
-            im = im[:, ::-1, :]
-            raw_img = raw_img[:, ::-1, :].copy()
-
-            flipped_gt_boxes = gt_boxes.copy()
-            flipped_gt_boxes[:, 0] = im.shape[1] - gt_boxes[:, 2]
-            flipped_gt_boxes[:, 2] = im.shape[1] - gt_boxes[:, 0]
-            gt_boxes = flipped_gt_boxes
-
-            flipped_xmin = im.shape[1] - proposals[:, 2]
-            flipped_xmax = im.shape[1] - proposals[:, 0]
-            proposals[:, 0] = flipped_xmin
-            proposals[:, 2] = flipped_xmax
+        # if self.training and np.random.rand() > 0.5:
+        #     im = im[:, ::-1, :]
+        #     raw_img = raw_img[:, ::-1, :].copy()
+        #
+        #     flipped_gt_boxes = gt_boxes.copy()
+        #     flipped_gt_boxes[:, 0] = im.shape[1] - gt_boxes[:, 2]
+        #     flipped_gt_boxes[:, 2] = im.shape[1] - gt_boxes[:, 0]
+        #     gt_boxes = flipped_gt_boxes
+        #
+        #     flipped_xmin = im.shape[1] - proposals[:, 2]
+        #     flipped_xmax = im.shape[1] - proposals[:, 0]
+        #     proposals[:, 0] = flipped_xmin
+        #     proposals[:, 2] = flipped_xmax
 
         if self.training and self.rotation:
             gt_boxes = to_center_form(gt_boxes)

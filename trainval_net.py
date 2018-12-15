@@ -128,11 +128,10 @@ def draw_box(boxes, col=None):
             c = np.random.rand(3)
         else:
             c = col
-        plt.hlines(ymin, xmin, xmax, colors=c, lw=2)
-        plt.hlines(ymax, xmin, xmax, colors=c, lw=2)
-        plt.vlines(xmin, ymin, ymax, colors=c, lw=2)
-        plt.vlines(xmax, ymin, ymax, colors=c, lw=2)
-
+        plt.hlines(ymin, xmin - 1, xmax + 1, colors=c, lw=3)
+        plt.hlines(ymax, xmin - 1, xmax + 1, colors=c, lw=3)
+        plt.vlines(xmin, ymin - 1, ymax + 1, colors=c, lw=3)
+        plt.vlines(xmax, ymin - 1, ymax + 1, colors=c, lw=3)
 
 def validate(model, random_box_generator, criterion, dataset, args):
     model.eval()
@@ -337,6 +336,10 @@ def train():
                     print('@@@@@ no box @@@@@')
                     continue
                 rois = rois[:cnt, :]
+
+            plt.imshow(raw_img)
+            plt.show()
+            continue
 
             mean_boxes_per_iter += rois.size(0)
             rois = Variable(rois.cuda())

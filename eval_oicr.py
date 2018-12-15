@@ -71,42 +71,42 @@ all_boxes3 = pickle.load(open('../repo/oicr_result/test_detections.pkl', 'rb'), 
 #all_boxes = pickle.load(open('/home/seungkwan/repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, K), 'rb'), encoding='latin1')
 
 ################# refine and nms ####################################
-UBR = UBRWrapper('../repo/ubr/%s.pth' % model_name)
-for cls in range(20):
-    st = time.time()
-    for i in range(len(all_boxes1[cls])):
-        if i % 1000 == 0:
-            print(i)
-        if len(all_boxes1[cls][i]) == 0:
-            continue
-
-        # for visualize
-        # if all_boxes[cls][i][0, 4] < 0.3:
-        #     continue
-
-        img, gt, h, w, id = dataset[i]
-        boxes = all_boxes1[cls][i][:, :4].copy()
-        refined_boxes = UBR.query(img, boxes, 3)
-        all_boxes1[cls][i][:, :4] = refined_boxes[0][:, :]
-        all_boxes2[cls][i][:, :4] = refined_boxes[1][:, :]
-        all_boxes3[cls][i][:, :4] = refined_boxes[2][:, :]
-
-
-        # plt.imshow(img)
-        # draw_box(boxes[:5], 'yellow')
-        # draw_box(refined_boxes[:5], 'blue')
-        # plt.show()
-
-    print('%d class refinement complete %f' % (cls, time.time() - st))
-    st = time.time()
+# UBR = UBRWrapper('../repo/ubr/%s.pth' % model_name)
+# for cls in range(20):
+#     st = time.time()
+#     for i in range(len(all_boxes1[cls])):
+#         if i % 1000 == 0:
+#             print(i)
+#         if len(all_boxes1[cls][i]) == 0:
+#             continue
+#
+#         # for visualize
+#         # if all_boxes[cls][i][0, 4] < 0.3:
+#         #     continue
+#
+#         img, gt, h, w, id = dataset[i]
+#         boxes = all_boxes1[cls][i][:, :4].copy()
+#         refined_boxes = UBR.query(img, boxes, 3)
+#         all_boxes1[cls][i][:, :4] = refined_boxes[0][:, :]
+#         all_boxes2[cls][i][:, :4] = refined_boxes[1][:, :]
+#         all_boxes3[cls][i][:, :4] = refined_boxes[2][:, :]
+#
+#
+#         # plt.imshow(img)
+#         # draw_box(boxes[:5], 'yellow')
+#         # draw_box(refined_boxes[:5], 'blue')
+#         # plt.show()
+#
+#     print('%d class refinement complete %f' % (cls, time.time() - st))
+#     st = time.time()
 
 all_boxes1 = apply_nms(all_boxes1, 0.3)
 all_boxes2 = apply_nms(all_boxes2, 0.3)
 all_boxes3 = apply_nms(all_boxes3, 0.3)
 
-pickle.dump(all_boxes1, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 1), 'wb'))
-pickle.dump(all_boxes2, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 2), 'wb'))
-pickle.dump(all_boxes3, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 3), 'wb'))
+# pickle.dump(all_boxes1, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 1), 'wb'))
+# pickle.dump(all_boxes2, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 2), 'wb'))
+# pickle.dump(all_boxes3, open('../repo/oicr_result/oicr_test07_%s_k%d.pkl' % (model_name, 3), 'wb'))
 
 #pickle.dump(all_boxes, open('../repo/oicr_result/oicr_frcnn_test07_%s_k%d.pkl' % (model_name, K), 'wb'))
 

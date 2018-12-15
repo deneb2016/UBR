@@ -140,15 +140,15 @@ for i in range(len(perm)):
         print(i, time.time() - st)
         st = time.time()
 
-    # plt.imshow(img)
-    # result[:, 0].clip(5, w - 6)
-    # result[:, 2].clip(5, w - 6)
-    # result[:, 1].clip(5, h - 6)
-    # result[:, 3].clip(5, h - 6)
-    #
-    # draw_box(result)
-    # draw_box(result[0:1, :], 'black')
-    # plt.show()
+    plt.imshow(img)
+    result[:, 0].clip(5, w - 6)
+    result[:, 2].clip(5, w - 6)
+    result[:, 1].clip(5, h - 6)
+    result[:, 3].clip(5, h - 6)
+
+    draw_box(result)
+    draw_box(result[0:1, :], 'black')
+    plt.show()
 
 # ids = ['000053', '000149', ]
 # for i in range(len(ids)):
